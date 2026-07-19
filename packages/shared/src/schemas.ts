@@ -1,0 +1,62 @@
+import { z } from 'zod'
+
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+  name: z.string().min(1).max(50),
+})
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+})
+
+export const storyDetailsSchema = z.object({
+  childName: z.string().min(1).max(30),
+  childAge: z.number().int().min(1).max(14),
+  gender: z.enum(['boy', 'girl']),
+  plotId: z.string().min(1),
+  format: z.enum(['video', 'book']),
+})
+
+export const chooseAvatarSchema = z.object({
+  avatarIndex: z.number().int().min(0).max(2),
+})
+
+export const topupSchema = z.object({
+  packId: z.string().min(1),
+})
+
+export const casheraWebhookSchema = z.object({
+  event: z.string().optional(),
+  type: z.string().optional(),
+  data: z.record(z.unknown()).optional(),
+  uuid: z.string().optional(),
+  external_id: z.string().optional(),
+  status: z.string().optional(),
+})
+
+export type StoryStatus =
+  | 'casting'
+  | 'awaiting_choice'
+  | 'awaiting_details'
+  | 'rendering'
+  | 'ready'
+  | 'failed'
+
+export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'canceled'
+
+export interface StoryDto {
+  id: string
+  status: StoryStatus
+  plotId: string | null
+  childName: string | null
+  childAge: number | null
+  gender: 'boy' | 'girl' | null
+  format: 'video' | 'book' | null
+  tokensCost: number | null
+  avatars: string[]
+  chosenAvatar: number | null
+  resultUrl: string | null
+  createdAt: string
+}
