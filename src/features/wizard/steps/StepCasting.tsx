@@ -5,7 +5,7 @@ import type { AvatarVariant } from '@/features/wizard/model'
 import { cn } from '@/shared/lib/cn'
 
 function AvatarArt({ variant, name }: { variant: AvatarVariant; name: string }) {
-  const initial = name.trim().charAt(0).toUpperCase() || '✦'
+  const initial = name.trim().charAt(0).toUpperCase()
   return (
     <div
       aria-hidden
@@ -15,17 +15,17 @@ function AvatarArt({ variant, name }: { variant: AvatarVariant; name: string }) 
       }}
     >
       <span
-        className="flex h-20 w-20 items-center justify-center rounded-full font-display text-4xl text-ink-900"
+        className="flex h-20 w-20 items-center justify-center rounded-full font-display text-4xl text-night-950"
         style={{
           background: `radial-gradient(circle at 35% 30%, hsl(${variant.accentHue} 70% 60%), hsl(${variant.hue} 60% 38%))`,
           boxShadow: `0 0 40px hsl(${variant.accentHue} 70% 55% / 0.45)`,
         }}
       >
-        {initial}
+        {initial || <Sparkle weight="fill" className="h-8 w-8 text-cream" />}
       </span>
       <Sparkle className="absolute right-3 top-3 h-4 w-4 text-white/40" />
       <span className="absolute bottom-2 left-0 right-0 text-center text-[10px] uppercase tracking-widest text-white/35">
-        Ð¿ÑÐµÐ´Ð¿ÑÐ¾ÑÐ¼Ð¾ÑÑ
+        предпросмотр
       </span>
     </div>
   )
@@ -42,10 +42,10 @@ export function StepCasting() {
   return (
     <div className="space-y-6 animate-rise">
       <header className="space-y-2">
-        <h1 className="font-display text-2xl text-ink-900">ÐÐ°ÑÑÐ¸Ð½Ð³ Ð³ÐµÑÐ¾Ñ</h1>
+        <h1 className="font-display text-2xl text-ink-900">Кастинг героя</h1>
         <p className="text-sm text-ink-800">
-          ÐÐµÐ¹ÑÐ¾ÑÐµÑÑ Ð½Ð°ÑÐ¸ÑÐ¾Ð²Ð°Ð»Ð° ÑÑÐ¸ Ð²Ð°ÑÐ¸Ð°Ð½ÑÐ°. ÐÑÐ±ÐµÑÐ¸ÑÐµ ÑÐ¾Ð³Ð¾, ÐºÑÐ¾ Ð±Ð¾Ð»ÑÑÐµ Ð¿Ð¾ÑÐ¾Ð¶ Ð½Ð°{' '}
-          {childName.trim() || 'Ð²Ð°ÑÐµÐ³Ð¾ ÑÐµÐ±ÑÐ½ÐºÐ°'}
+          Нейросеть нарисовала три варианта. Выберите того, кто больше похож на{' '}
+          {childName.trim() || 'вашего ребёнка'}
         </p>
       </header>
 
@@ -58,13 +58,13 @@ export function StepCasting() {
             </span>
           </span>
           <div className="space-y-1">
-            <p className="font-medium text-ink-900">Ð¥ÑÐ´Ð¾Ð¶Ð½Ð¸Ðº Ð·Ð° ÑÐ°Ð±Ð¾ÑÐ¾Ð¹â¦</p>
-            <p className="text-xs text-ink-500">ÐÐ±ÑÑÐ½Ð¾ ÑÑÐ¾ Ð·Ð°Ð½Ð¸Ð¼Ð°ÐµÑ 2â3 Ð¼Ð¸Ð½ÑÑÑ</p>
+            <p className="font-medium text-ink-900">Художник за работой…</p>
+            <p className="text-xs text-ink-500">Обычно это занимает 2–3 минуты</p>
           </div>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="ÐÐ°ÑÐ¸Ð°Ð½ÑÑ Ð³ÐµÑÐ¾Ñ">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Варианты героя">
             {avatars.map((v) => (
               <button
                 key={v.id}
@@ -85,7 +85,7 @@ export function StepCasting() {
           </div>
           <Button variant="secondary" className="w-full" onClick={recast}>
             <ArrowsClockwise className="h-4 w-4" />
-            ÐÑÑ Ð²Ð°ÑÐ¸Ð°Ð½ÑÑ â Ð±ÐµÑÐ¿Ð»Ð°ÑÐ½Ð¾
+            Ещё варианты — бесплатно
           </Button>
         </>
       )}
