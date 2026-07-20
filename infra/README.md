@@ -77,17 +77,36 @@ ssh kinomalysh 'sudo cat /etc/kinomalysh/db.env'
 
 ## DNS
 
-DNS домена обслуживает **Timeweb**, не Reg.ru. Так вышло вынужденно: у Reg.ru сломана
-публикация зоны — панель принимает записи, но серийник SOA не меняется и на NS ничего
-не уезжает. Проверено добавлением пробной TXT-записи.
+DNS домена обслуживает **Timeweb**. Реестр `.RU` делегирует на NS Timeweb, зона там
+живая и авторитетная (`aa`, собственный SOA `ns1.timeweb.ru`), `A @` → `217.149.22.50`.
 
 - Регистратор: Reg.ru (только регистрация, DNS там не используется)
 - NS: `ns1.timeweb.ru`, `ns2.timeweb.ru`, `ns3.timeweb.org`, `ns4.timeweb.org`
 - Зона и записи: панель Timeweb Cloud → Домены и SSL → `kinomalysh.ru` → DNS
-- Записи: `A @` и `A www` → `217.149.22.50`, `AAAA` → `2a03:6f00:a::2:d38c`
+- Записи: `A @` и `A www` → `217.149.22.50`. **AAAA нет** — при этом у сервера
+  есть глобальный IPv6 `2a03:6f00:a::2:d38c` и ufw пускает v6 на 80/443.
+  Запись стоит добавить, но сначала проверить, что Caddy отдаёт по v6.
 
 Домен в статусе `UNVERIFIED` — подана идентификация владельца через Госуслуги.
 Без неё домен со временем снимают с делегирования.
+
+### Как проверять DNS: только по HTTPS
+
+**Локальная сеть на маке перехватывает весь UDP/53.** Проверено: запрос к `192.0.2.1`
+(TEST-NET, маршрутизироваться не может) возвращает валидный ответ. Поэтому `dig` с мака
+врёт — отдаёт кэш перехватчика без флага `aa` и с чужим SOA. На этом мы один раз уже
+сделали неверный вывод, будто у Reg.ru сломана публикация зоны. Публикация исправна.
+
+Проверять только так:
+
+```bash
+curl -s "https://dns.google/resolve?name=kinomalysh.ru&type=A" | jq .
+curl -s -H 'accept: application/dns-json' \
+  "https://cloudflare-dns.com/dns-query?name=kinomalysh.ru&type=NS" | jq .
+ssh kinomalysh 'dig +norecurse +noall +comments +answer SOA kinomalysh.ru @ns1.timeweb.ru'
+```
+
+У сервера сеть чистая — оттуда `dig` можно доверять.
 
 ## S3
 
@@ -98,12 +117,64 @@ DNS домена обслуживает **Timeweb**, не Reg.ru. Так выш�
 Ключи на сервере: `/etc/kinomalysh/s3.env`, `chmod 600`.
 Endpoint `https://s3.twcstorage.ru`, region `ru-1`, path-style.
 
+## Веб и SSL
+
+Конфиг — `infra/Caddyfile`. Выкладка фронта одной командой:
+
+```bash
+./infra/deploy-web.sh
+```
+
+Скрипт собирает `packages/shared` и `apps/web`, валидирует Caddyfile **до** подмены,
+льёт `dist/` в `/srv/kinomalysh/web` через `rsync --delete`, перезагружает Caddy и
+проверяет, что ключевые страницы отдают 200. При любой осечке падает, не доломав живое.
+
+Сертификаты Let's Encrypt выпущены 21.07.2026 на `kinomalysh.ru` и `www`, действуют
+до 18.10.2026, Caddy продлевает сам. HTTP отдаёт 308 на HTTPS, `www` — 301 на apex.
+Заголовки: HSTS 1 год + includeSubDomains, CSP, nosniff, `X-Frame-Options: DENY`,
+Referrer-Policy, Permissions-Policy. Логи — `/var/log/caddy/access.log`, JSON,
+ротация 50 МиБ × 10.
+
+HSTS **без `preload`** сознательно: preload практически необратим, а домен новый.
+Включать только когда всё встанет на HTTPS окончательно.
+
+Раздаётся статика фронта из `/srv/kinomalysh/web` — 56 пререндеренных страниц.
+API (`apps/api`) ещё не развёрнут; когда поднимем, добавить в `Caddyfile`
+`handle /api/* { reverse_proxy localhost:3001 }` **до** блока `try_files`.
+
+### Решения по конфигу, которые легко сломать по незнанию
+
+**`try_files {path} {path}/index.html /index.html` — без `{path}/`.** Если вернуть
+`{path}/`, Caddy начнёт редиректить `/create` → `/create/` (308). А `canonical` и все
+56 ссылок в `sitemap.xml` записаны **без** слэша — получится, что каждый URL из карты
+сайта отдаёт редирект и не совпадает с каноническим. Это прямой удар по индексации.
+
+**`script-src` содержит `'unsafe-inline'`** — вынужденно: на страницах есть
+`<script type="application/ld+json">` со Schema.org-разметкой, а браузеры режут её
+обычным `script-src 'self'`. Убрать `'unsafe-inline'` можно будет только когда фронт
+начнёт отдаваться Node-сервером с per-request nonce. Пока это осознанный долг:
+`object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'` и `form-action 'self'`
+на месте и закрывают основное.
+
+**`style-src`/`font-src` пускают Google Fonts** — сайт грузит Kurale, Golos Text и
+Neucha с `fonts.googleapis.com`. Без этих исключений вёрстка падает на системные шрифты.
+Правильнее шрифты самохостить: минус внешний домен из CSP, минус два TLS-рукопожатия.
+
+**`admin localhost:2019` — не выключать.** С `admin off` перестаёт работать
+`systemctl reload` (он ходит именно в этот API), и конфиг можно менять только полным
+рестартом с обрывом соединений. Порт слушается только на localhost и закрыт ufw.
+
+Грабли: **не запускайте `caddy` под `sudo` вручную** — он создаст
+`/var/log/caddy/access.log` от `root:root 600`, и сервис потом не сможет в него писать,
+reload упадёт с `permission denied`. Лечится
+`sudo chown caddy:caddy /var/log/caddy/access.log`.
+
 ## Что ещё не сделано
 
-- [ ] Дождаться, пока NS Timeweb станут авторитетными для зоны (сейчас отвечают из
-      рекурсивного кэша старыми данными Reg.ru — нет флага `aa`, SOA чужой)
-- [ ] Caddyfile под домен, выпуск SSL
+- [x] Делегирование на Timeweb — зона авторитетна
+- [x] Caddyfile под домен, выпуск SSL — готово, см. раздел выше
 - [x] S3-хранилище — готово, см. раздел выше
+- [ ] Добавить AAAA-запись на `2a03:6f00:a::2:d38c`
 - [ ] Отдача роликов через CDN + presigned-ссылки в коде
 - [ ] systemd-юниты для `api` и `worker`
 - [ ] Выкладка кода и миграции базы
