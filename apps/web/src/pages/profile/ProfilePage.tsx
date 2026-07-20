@@ -84,7 +84,7 @@ export function ProfilePage() {
               читательский билет {BRAND.toLowerCase()}а
             </p>
             <img
-              src={asset('logo.webp')}
+              src={asset('logo.svg')}
               alt=""
               width={32}
               height={32}

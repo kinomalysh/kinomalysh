@@ -28,7 +28,7 @@ export function AppShell() {
         <div className="flex items-center justify-between gap-4">
           <NavLink to={ROUTES.home} className="group flex shrink-0 items-center gap-2.5">
             <img
-              src={asset('logo.webp')}
+              src={asset('logo.svg')}
               alt=""
               width={40}
               height={40}
