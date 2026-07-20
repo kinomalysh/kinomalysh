@@ -10,7 +10,7 @@ export function DemoReel() {
         <div className="sticker overflow-hidden rounded-[2rem] rotate-[0.6deg]">
           <video
             src={asset('story-demo.mp4')}
-            poster={asset('plots/sleep.jpg')}
+            poster={asset('plots/sleep.webp')}
             autoPlay
             muted
             loop

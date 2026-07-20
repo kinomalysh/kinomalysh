@@ -3,6 +3,8 @@ import { Books, Moon, Sparkle, User, MagicWand } from '@phosphor-icons/react'
 import { cn } from '@/shared/lib/cn'
 import { BRAND, ROUTES } from '@/shared/config/routes'
 import { Fireflies } from '@/shared/ui/Fireflies'
+import { JsonLd } from '@/shared/ui/JsonLd'
+import { buildOrganizationLd, buildWebsiteLd } from '@/shared/lib/seo'
 import { asset } from '@/shared/lib/asset'
 
 const TABS = [
@@ -19,16 +21,14 @@ export function AppShell() {
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 md:max-w-2xl">
+      <JsonLd data={buildOrganizationLd()} />
+      <JsonLd data={buildWebsiteLd()} />
       <Fireflies />
       <header className="sticky top-0 z-30 -mx-4 mb-2 border-b-2 border-dashed border-ink-900/15 bg-paper/95 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
-          <NavLink
-            to={ROUTES.home}
-            className="group flex shrink-0 items-center gap-2.5"
-            aria-label={`${BRAND} — на главную`}
-          >
+          <NavLink to={ROUTES.home} className="group flex shrink-0 items-center gap-2.5">
             <img
-              src={asset('logo.png')}
+              src={asset('logo.webp')}
               alt=""
               width={40}
               height={40}
@@ -68,7 +68,7 @@ export function AppShell() {
           <button
             type="button"
             onClick={() => navigate(ROUTES.create)}
-            className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-ink-900 bg-poppy px-4 py-2 text-sm font-bold text-cream shadow-[2px_3px_0_rgba(0,0,0,0.45)] transition-all duration-150 hover:bg-poppy-deep active:translate-y-0.5 active:shadow-[1px_1px_0_rgba(0,0,0,0.45)] sm:inline-flex"
+            className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-ink-900 bg-poppy px-4 py-2 text-sm font-bold text-on-poppy shadow-[2px_3px_0_rgba(0,0,0,0.45)] transition-all duration-150 hover:bg-poppy-deep active:translate-y-0.5 active:shadow-[1px_1px_0_rgba(0,0,0,0.45)] sm:inline-flex"
           >
             <Sparkle weight="fill" className="h-4 w-4" />
             Создать сказку
@@ -99,7 +99,7 @@ export function AppShell() {
                       <>
                         <span
                           className={cn(
-                            'flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink-900 bg-poppy text-cream shadow-[0_4px_0_rgba(0,0,0,0.5)] transition-all duration-200',
+                            'flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink-900 bg-poppy text-on-poppy shadow-[0_4px_0_rgba(0,0,0,0.5)] transition-all duration-200',
                             isActive
                               ? 'rotate-[-10deg] scale-105 shadow-[0_2px_0_rgba(0,0,0,0.5)]'
                               : 'hover:-translate-y-1 active:translate-y-0',

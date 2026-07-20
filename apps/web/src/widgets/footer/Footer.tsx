@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { PaperPlaneTilt, TelegramLogo } from '@phosphor-icons/react'
 import { BRAND, ROUTES } from '@/shared/config/routes'
 import { asset } from '@/shared/lib/asset'
+import { SEO_PAGES } from '@/entities/seo-page/model'
 
 const DOC_LINKS = [
   { to: ROUTES.terms, label: 'Пользовательское соглашение' },
@@ -15,11 +16,11 @@ export function Footer() {
         — конец. но сказки только начинаются —
       </p>
 
-      <div className="mt-8 grid gap-8 sm:grid-cols-[1.2fr_1fr_1fr]">
+      <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
             <img
-              src={asset('logo.png')}
+              src={asset('logo.webp')}
               alt=""
               width={36}
               height={36}
@@ -32,6 +33,22 @@ export function Footer() {
             озвучкой — за 15 минут.
           </p>
         </div>
+
+        <nav aria-label="Что мы делаем">
+          <h3 className="text-xs font-bold uppercase tracking-wide text-ink-500">Что мы делаем</h3>
+          <ul className="mt-3 space-y-2">
+            {SEO_PAGES.map((page) => (
+              <li key={page.slug}>
+                <Link
+                  to={`/${page.slug}`}
+                  className="text-sm text-ink-800 underline decoration-ink-900/25 decoration-dashed underline-offset-4 transition-colors hover:text-poppy hover:decoration-poppy/50"
+                >
+                  {page.h1}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <nav aria-label="Документы">
           <h3 className="text-xs font-bold uppercase tracking-wide text-ink-500">Документы</h3>
@@ -54,22 +71,22 @@ export function Footer() {
           <ul className="mt-3 space-y-2">
             <li>
               <a
-                href="https://t.me/ogonek_help"
+                href="https://t.me/kinomalysh_help"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-ink-800 transition-colors hover:text-poppy"
               >
                 <TelegramLogo className="h-4 w-4" />
-                @ogonek_help
+                @kinomalysh_help
               </a>
             </li>
             <li>
               <a
-                href="mailto:hello@ogonek.example"
+                href="mailto:hello@kinomalysh.ru"
                 className="flex items-center gap-2 text-sm text-ink-800 transition-colors hover:text-poppy"
               >
                 <PaperPlaneTilt className="h-4 w-4" />
-                hello@ogonek.example
+                hello@kinomalysh.ru
               </a>
             </li>
           </ul>

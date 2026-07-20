@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X } from '@phosphor-icons/react'
 import { ROUTES } from '@/shared/config/routes'
+import { useSeo } from '@/shared/lib/seo'
 import { Progress } from '@/shared/ui/Progress'
 import { STEP_ORDER, useWizard } from '@/features/wizard/model'
 import { StepPlot } from '@/features/wizard/steps/StepPlot'
@@ -22,6 +23,7 @@ const STEP_VIEWS = {
 } as const
 
 export function CreatePage() {
+  useSeo('create')
   const navigate = useNavigate()
   const step = useWizard((s) => s.step)
   const goBack = useWizard((s) => s.goBack)

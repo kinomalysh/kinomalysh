@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FAQ } from '@/shared/config/faq'
 import { Button } from '@/shared/ui/Button'
 import type { CSSProperties } from 'react'
 import { useReveal } from '@/shared/lib/useReveal'
@@ -40,7 +41,7 @@ export function Pricing() {
               aria-hidden
               className={cn(
                 'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink-900',
-                i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-cream',
+                i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-on-poppy',
               )}
             >
               <Check className="h-4 w-4" weight="bold" />
@@ -64,28 +65,6 @@ export function Pricing() {
   )
 }
 
-const FAQ = [
-  {
-    q: 'Безопасно ли отдавать вам фото ребёнка?',
-    a: 'Да. Фото используется только для вашей сказки и автоматически удаляется через неделю.',
-  },
-  {
-    q: 'Сколько ждать?',
-    a: 'Портреты героя — две-три минуты. Готовый мультфильм — от пяти до двадцати. Пришлём уведомление, можно не сидеть у экрана.',
-  },
-  {
-    q: 'А если герой выйдет непохожим?',
-    a: 'До оплаты вы выбираете из трёх портретов и можете бесплатно просить ещё. Кадры сцен тоже показываем заранее.',
-  },
-  {
-    q: 'Можно подарить?',
-    a: 'Да, сертификат оформляется в профиле за минуту — хороший подарок на день рождения.',
-  },
-  {
-    q: 'Вдруг сказка напугает?',
-    a: 'Не напугает: сюжеты написаны заранее и проверены редактором. Только добрые истории, ноль плюс.',
-  },
-]
 
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0)

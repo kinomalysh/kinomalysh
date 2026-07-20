@@ -62,7 +62,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
         toggle()
       }}
       aria-pressed={showHero}
-      aria-label={showHero ? 'Показать исходное фото' : 'Превратить фото в героя'}
+      aria-label={showHero ? 'нажмите — вернуть фото' : 'нажмите для магии'}
       className="group relative block w-full cursor-pointer overflow-hidden rounded-[1.6rem] [container-type:inline-size]"
     >
       <img
@@ -71,6 +71,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
         width={560}
         height={560}
         draggable={false}
+        fetchPriority="high"
         className="block aspect-square w-full select-none object-cover"
       />
       <div
@@ -118,6 +119,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
       )}
 
       <span
+        aria-hidden
         className={cn(
           'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity duration-300',
           showHero ? 'opacity-0' : 'bg-night-950/70 text-cream',
@@ -126,6 +128,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
         фото
       </span>
       <span
+        aria-hidden
         className={cn(
           'absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity duration-300',
           showHero ? 'bg-night-950/70 text-cream' : 'opacity-0',

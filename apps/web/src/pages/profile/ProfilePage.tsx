@@ -16,6 +16,7 @@ import { PACKS, PRICE_VIDEO_TOKENS } from '@/entities/pricing/model'
 import { useUser } from '@/entities/user/model'
 import { useLibrary } from '@/entities/story/model'
 import { asset } from '@/shared/lib/asset'
+import { useSeo } from '@/shared/lib/seo'
 
 const MENU = [
   {
@@ -49,6 +50,7 @@ const MENU = [
 ]
 
 export function ProfilePage() {
+  useSeo('profile')
   const navigate = useNavigate()
   const name = useUser((s) => s.name)
   const balance = useUser((s) => s.balance)
@@ -82,7 +84,7 @@ export function ProfilePage() {
               читательский билет {BRAND.toLowerCase()}а
             </p>
             <img
-              src={asset('logo.png')}
+              src={asset('logo.webp')}
               alt=""
               width={32}
               height={32}
@@ -129,7 +131,7 @@ export function ProfilePage() {
               )}
             >
               {pack.badge && (
-                <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-[9px] font-bold text-cream">
+                <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-[9px] font-bold text-on-poppy">
                   {pack.badge}
                 </span>
               )}

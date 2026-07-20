@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from '@phosphor-icons/react'
 import { BRAND, ROUTES } from '@/shared/config/routes'
+import { useSeo } from '@/shared/lib/seo'
 
 interface DocSection {
   title: string
@@ -63,7 +64,7 @@ const TERMS: DocSection[] = [
   {
     title: 'О чём этот документ',
     body: [
-      'Это соглашение между вами и сервисом «Огонёк». Пользуясь сайтом, вы принимаете его условия. Мы постарались написать всё коротко и без канцелярита.',
+      'Это соглашение между вами и сервисом «Киномалыш». Пользуясь сайтом, вы принимаете его условия. Мы постарались написать всё коротко и без канцелярита.',
     ],
   },
   {
@@ -150,11 +151,12 @@ const PRIVACY: DocSection[] = [
   },
   {
     title: 'Вопросы',
-    body: ['Пишите в поддержку: @ogonek_help — отвечаем быстро и по-человечески.'],
+    body: ['Пишите в поддержку: @kinomalysh_help — отвечаем быстро и по-человечески.'],
   },
 ]
 
 export function TermsPage() {
+  useSeo('terms')
   return (
     <DocLayout
       title="Пользовательское соглашение"
@@ -166,6 +168,7 @@ export function TermsPage() {
 }
 
 export function PrivacyPage() {
+  useSeo('privacy')
   return (
     <DocLayout
       title="Политика конфиденциальности"

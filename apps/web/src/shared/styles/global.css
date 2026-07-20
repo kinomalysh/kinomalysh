@@ -34,6 +34,7 @@
   --color-ink-500: var(--t-ink-3);
   --color-poppy: var(--t-accent);
   --color-poppy-deep: var(--t-accent-press);
+  --color-on-poppy: var(--t-on-solid);
   --color-mustard: var(--t-gold);
   --color-mustard-deep: var(--t-gold-text);
   --color-leaf: var(--t-leaf);

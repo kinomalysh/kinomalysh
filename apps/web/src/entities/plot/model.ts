@@ -24,7 +24,7 @@ export interface Plot {
 export const PLOTS: Plot[] = [
   {
     id: 'emotions',
-    image: asset('plots/emotions.jpg'),
+    image: asset('plots/emotions.webp'),
     title: 'Большие эмоции',
     tagline: 'Про злость, грусть и радость — через образы погоды',
     benefit: 'Учит понимать чувства',
@@ -34,7 +34,7 @@ export const PLOTS: Plot[] = [
   },
   {
     id: 'sleep',
-    image: asset('plots/sleep.jpg'),
+    image: asset('plots/sleep.webp'),
     title: 'Луна ждёт в гости',
     tagline: 'Мягкое путешествие по звёздному небу перед сном',
     benefit: 'Помогает уснуть',
@@ -44,7 +44,7 @@ export const PLOTS: Plot[] = [
   },
   {
     id: 'teeth',
-    image: asset('plots/teeth.jpg'),
+    image: asset('plots/teeth.webp'),
     title: 'Миссия Зубной Щётки',
     tagline: 'Весёлая охота на микробов утром и вечером',
     benefit: 'Приучает чистить зубы',
@@ -54,7 +54,7 @@ export const PLOTS: Plot[] = [
   },
   {
     id: 'explorer',
-    image: asset('plots/explorer.jpg'),
+    image: asset('plots/explorer.webp'),
     title: 'Великий исследователь',
     tagline: 'Обычный дом превращается в мир открытий',
     benefit: 'Развивает любознательность',
@@ -64,7 +64,7 @@ export const PLOTS: Plot[] = [
   },
   {
     id: 'helper',
-    image: asset('plots/helper.jpg'),
+    image: asset('plots/helper.webp'),
     title: 'Золотые помощники',
     tagline: 'Уборка становится супергеройской миссией',
     benefit: 'Учит помогать по дому',
@@ -74,7 +74,7 @@ export const PLOTS: Plot[] = [
   },
   {
     id: 'space-hero',
-    image: asset('plots/space-hero.jpg'),
+    image: asset('plots/space-hero.webp'),
     title: 'Звёздный защитник',
     tagline: 'Эпическое приключение с полётами и превращениями',
     benefit: 'Супергеройский сюжет',

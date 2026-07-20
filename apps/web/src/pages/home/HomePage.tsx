@@ -1,17 +1,41 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/ui/Button'
+import { JsonLd } from '@/shared/ui/JsonLd'
 import { ROUTES } from '@/shared/config/routes'
+import { FAQ } from '@/shared/config/faq'
+import { siteConfig } from '@/shared/config/site'
+import {
+  useSeo,
+  buildFaqLd,
+  buildProductLd,
+  buildHowToLd,
+  buildVideoLd,
+} from '@/shared/lib/seo'
 import { Hero } from '@/widgets/landing/Hero'
 import { DemoReel } from '@/widgets/landing/DemoReel'
 import { StickyCta } from '@/widgets/landing/StickyCta'
-import { HowItWorks, Reviews, Showcase } from '@/widgets/landing/Sections'
+import { HowItWorks, Reviews, Showcase, STEPS } from '@/widgets/landing/Sections'
 import { Faq, Pricing } from '@/widgets/landing/PricingFaq'
 import { Footer } from '@/widgets/footer/Footer'
 
 export function HomePage() {
   const navigate = useNavigate()
+  useSeo('home')
   return (
     <>
+      <JsonLd data={buildProductLd()} />
+      <JsonLd data={buildFaqLd(FAQ)} />
+      <JsonLd data={buildHowToLd(STEPS)} />
+      <JsonLd
+        data={buildVideoLd({
+          name: 'Фрагмент персональной сказки «Луна ждёт в гости»',
+          description:
+            'Пример персонального мультфильма Огонька, где ребёнок становится главным героем истории про путешествие к луне.',
+          thumbnail: '/plots/sleep.webp',
+          contentUrl: '/story-demo.mp4',
+          uploadDate: siteConfig.contentDate,
+        })}
+      />
       <Hero />
       <DemoReel />
       <Showcase />

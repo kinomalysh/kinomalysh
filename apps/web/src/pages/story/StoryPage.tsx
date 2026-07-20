@@ -5,12 +5,15 @@ import { Card } from '@/shared/ui/Card'
 import { ROUTES } from '@/shared/config/routes'
 import { getPlot } from '@/entities/plot/model'
 import { useLibrary } from '@/entities/story/model'
+import { useSeo } from '@/shared/lib/seo'
 
 export function StoryPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const story = useLibrary((s) => s.stories.find((st) => st.id === id))
   const plot = story ? getPlot(story.plotId) : undefined
+
+  useSeo('story', plot ? { title: `${plot.title} — Киномалыш` } : undefined)
 
   if (!story) {
     return (

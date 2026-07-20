@@ -39,7 +39,7 @@ export function Hero() {
 
         <figure className="mx-auto mt-10 w-full max-w-sm md:mt-0 md:max-w-none animate-settle" style={{ animationDelay: '280ms' }}>
           <div className="sticker rounded-[2rem] p-1.5 animate-floaty">
-            <MagicCard photoSrc={asset('demo-photo.jpg')} heroSrc={asset('demo-hero.jpg')} />
+            <MagicCard photoSrc={asset('demo-photo.webp')} heroSrc={asset('demo-hero.webp')} />
           </div>
         </figure>
       </div>

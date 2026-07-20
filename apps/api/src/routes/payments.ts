@@ -35,7 +35,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       const tx = await createCasheraPayment({
         amountMinor: payment.amountMinor,
         externalId: payment.id,
-        description: `Огонёк · ${pack.label}`,
+        description: `Киномалыш · ${pack.label}`,
       })
       const [updated] = await db
         .update(payments)

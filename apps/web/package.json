@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build && npm run build:ssr && node scripts/prerender.mjs",
+    "preview": "vite preview",
+    "build:ssr": "vite build --ssr src/app/entry-server.tsx --outDir dist-ssr"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",

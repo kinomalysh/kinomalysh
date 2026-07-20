@@ -10,5 +10,5 @@ export const ROUTES = {
   auth: '/auth',
 } as const
 
-export const BRAND = 'Огонёк'
+export const BRAND = 'Киномалыш'
 export const TOKEN_TO_RUB = 10

@@ -6,8 +6,10 @@ import { ROUTES } from '@/shared/config/routes'
 import { getPlot } from '@/entities/plot/model'
 import { STATUS_LABELS, useLibrary } from '@/entities/story/model'
 import { cn } from '@/shared/lib/cn'
+import { useSeo } from '@/shared/lib/seo'
 
 export function LibraryPage() {
+  useSeo('library')
   const navigate = useNavigate()
   const stories = useLibrary((s) => s.stories)
 

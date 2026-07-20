@@ -23,7 +23,7 @@ export function ChapterTitle({ chapter, title, id }: ChapterTitleProps) {
   )
 }
 
-const STEPS = [
+export const STEPS = [
   {
     title: 'Пришлите фото',
     text: 'Одно светлое фото анфас — этого достаточно, чтобы нейросеть узнала вашего ребёнка.',
@@ -59,7 +59,7 @@ export function Magic() {
         <figure className="w-[38%] max-w-52 rotate-[-2.5deg]">
           <div className="sticker overflow-hidden rounded-2xl">
             <img
-              src="/demo-photo.jpg"
+              src="/demo-photo.webp"
               alt="Обычное фото девочки"
               width={560}
               height={560}
@@ -93,7 +93,7 @@ export function Magic() {
         <figure className="w-[38%] max-w-52 rotate-[2.5deg]">
           <div className="sticker overflow-hidden rounded-2xl">
             <img
-              src="/demo-hero.jpg"
+              src="/demo-hero.webp"
               alt="Та же девочка в виде мультяшного персонажа"
               width={560}
               height={560}
@@ -169,7 +169,7 @@ export function HowItWorks() {
               aria-hidden
               className={cn(
                 'absolute -left-[13px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink-900 text-[11px] font-bold',
-                i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-cream',
+                i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-on-poppy',
               )}
             >
               {i + 1}

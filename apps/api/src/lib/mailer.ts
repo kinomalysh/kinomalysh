@@ -26,7 +26,7 @@ export async function sendOtpEmail(to: string, name: string, code: string) {
   await mailer.sendMail({
     from: env.SMTP_FROM,
     to,
-    subject: `${code} — ваш код для входа в Огонёк`,
+    subject: `${code} — ваш код для входа в Киномалыш`,
     text: `Здравствуйте, ${name}!\n\nВаш код подтверждения: ${code}\nОн действует 10 минут.\n\nЕсли вы не регистрировались в Огоньке — просто проигнорируйте это письмо.`,
     html: renderOtpEmail(name, code),
   })
@@ -54,7 +54,7 @@ export function renderOtpEmail(name: string, code: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;">
         <tr><td align="center" style="padding-bottom:24px;">
           <div style="font-family:Georgia,serif;font-size:28px;color:#fcf6ea;">
-            &#128294; Огонёк
+            &#128294; Киномалыш
           </div>
           <div style="font-family:'Comic Sans MS',cursive;font-size:14px;color:#9a99b5;margin-top:4px;">
             сказки на ночь
@@ -81,7 +81,7 @@ export function renderOtpEmail(name: string, code: string): string {
             — сегодня вечером сказка может быть про вашего ребёнка —
           </div>
           <div style="font-family:Arial,sans-serif;font-size:12px;color:#6b7190;margin-top:12px;">
-            © Огонёк · Поддержка: @ogonek_help
+            © Киномалыш · Поддержка: @kinomalysh_help
           </div>
         </td></tr>
       </table>
