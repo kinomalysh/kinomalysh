@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { VIDEO_MODEL } from '@kidsstory/shared'
 import { env } from './env.js'
 
 const AVATAR_STYLE =
@@ -67,4 +68,52 @@ export async function generateScene(avatarUrl: string, scenePrompt: string): Pro
     image_size: 'landscape_16_9',
     num_images: 1,
   })
+}
+
+interface FalVideoResponse {
+  video?: { url?: string }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function callFalQueue(model: string, input: Record<string, unknown>): Promise<unknown> {
+  const submit = await fetch(`https://queue.fal.run/${model}`, {
+    method: 'POST',
+    headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!submit.ok) {
+    const text = await submit.text().catch(() => '')
+    throw new FalError(`fal ${model} submit ${submit.status}: ${text.slice(0, 300)}`, submit.status)
+  }
+  const { status_url: statusUrl, response_url: responseUrl } = (await submit.json()) as {
+    status_url: string
+    response_url: string
+  }
+
+  for (;;) {
+    await sleep(5000)
+    const status = await fetch(statusUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
+    const state = (await status.json()) as { status?: string; error?: unknown }
+    if (state.status === 'COMPLETED') break
+    if (state.status === 'FAILED' || state.error) {
+      throw new FalError(`fal ${model} failed: ${JSON.stringify(state).slice(0, 300)}`, 502)
+    }
+  }
+
+  const result = await fetch(responseUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
+  return result.json()
+}
+
+export async function animateScene(sceneImageUrl: string, motionPrompt: string): Promise<string> {
+  const body = (await callFalQueue(VIDEO_MODEL.model, {
+    prompt: motionPrompt,
+    image_url: sceneImageUrl,
+    resolution: VIDEO_MODEL.resolution,
+    duration: VIDEO_MODEL.duration,
+    generate_audio: VIDEO_MODEL.generateAudio,
+  })) as FalVideoResponse
+  const url = body.video?.url
+  if (!url) throw new FalError(`fal ${VIDEO_MODEL.model} returned no video`, 502)
+  return url
 }
