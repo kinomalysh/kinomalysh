@@ -27,6 +27,27 @@ export const topupSchema = z.object({
   packId: z.string().min(1),
 })
 
+export const adminLoginSchema = z.object({
+  login: z.string().min(1).max(64),
+  password: z.string().min(1),
+})
+
+export const updatePromptsSchema = z.object({
+  scenePrompts: z.array(z.string().min(1).max(2000)).min(1).max(20),
+})
+
+export const adjustBalanceSchema = z.object({
+  delta: z.number().int().refine((v) => v !== 0, 'Изменение не может быть нулевым'),
+  reason: z.string().max(200).optional(),
+})
+
+export const createReelSchema = z.object({
+  kind: z.enum(['t2v', 'i2v']),
+  title: z.string().max(120).optional(),
+  scenePrompt: z.string().min(3).max(2000),
+  motionPrompt: z.string().max(2000).optional(),
+})
+
 export const casheraWebhookSchema = z.object({
   event: z.string().optional(),
   type: z.string().optional(),

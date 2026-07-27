@@ -6,6 +6,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6380'),
   JWT_SECRET: z.string().min(16).default('dev-secret-change-me-please'),
   WEB_URL: z.string().default('http://localhost:5199'),
+  ADMIN_URL: z.string().default('http://localhost:5299'),
   PUBLIC_API_URL: z.string().default('http://localhost:3001'),
   UPLOADS_DIR: z.string().default('./uploads'),
   CASHERA_API_URL: z.string().default('https://api.cashera.cash/api/v1'),

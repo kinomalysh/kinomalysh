@@ -35,6 +35,7 @@ export const stories = pgTable('stories', {
   photoPath: text('photo_path'),
   avatars: jsonb('avatars').$type<string[]>().notNull().default([]),
   chosenAvatar: integer('chosen_avatar'),
+  scenePrompts: jsonb('scene_prompts').$type<string[]>().notNull().default([]),
   scenes: jsonb('scenes').$type<string[]>().notNull().default([]),
   resultUrl: text('result_url'),
   failReason: text('fail_reason'),
@@ -97,4 +98,41 @@ export const emailOtps = pgTable('email_otps', {
   attempts: integer('attempts').notNull().default(0),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const admins = pgTable('admins', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  login: varchar('login', { length: 64 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  name: varchar('name', { length: 50 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const adminRefreshTokens = pgTable('admin_refresh_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: uuid('admin_id')
+    .notNull()
+    .references(() => admins.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const adReels = pgTable('ad_reels', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adminId: uuid('admin_id')
+    .notNull()
+    .references(() => admins.id, { onDelete: 'cascade' }),
+  kind: varchar('kind', { length: 8 }).notNull(),
+  title: varchar('title', { length: 120 }),
+  scenePrompt: text('scene_prompt').notNull(),
+  fullPrompt: text('full_prompt').notNull(),
+  motionPrompt: text('motion_prompt'),
+  inputPhotos: jsonb('input_photos').$type<string[]>().notNull().default([]),
+  firstFrameUrl: text('first_frame_url'),
+  status: varchar('status', { length: 16 }).notNull().default('queued'),
+  resultUrl: text('result_url'),
+  failReason: text('fail_reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

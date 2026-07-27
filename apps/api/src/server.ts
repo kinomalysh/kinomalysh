@@ -6,7 +6,9 @@ import fastifyStatic from '@fastify/static'
 import { ZodError } from 'zod'
 import { PLOTS } from '@kidsstory/shared'
 import { assertProdSecrets, env } from './env.js'
+import { adminAuthPlugin } from './plugins/adminAuth.js'
 import { authPlugin } from './plugins/auth.js'
+import { adminRoutes } from './routes/admin.js'
 import { authRoutes } from './routes/auth.js'
 import { paymentRoutes } from './routes/payments.js'
 import { storyRoutes } from './routes/stories.js'
@@ -16,13 +18,14 @@ async function main() {
 
   const app = Fastify({ logger: true })
 
-  await app.register(cors, { origin: [env.WEB_URL], credentials: true })
+  await app.register(cors, { origin: [env.WEB_URL, env.ADMIN_URL], credentials: true })
   await app.register(multipart)
   await app.register(fastifyStatic, {
     root: path.resolve(env.UPLOADS_DIR),
     prefix: '/uploads/',
   })
   await app.register(authPlugin)
+  await app.register(adminAuthPlugin)
 
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof ZodError) {
@@ -40,6 +43,7 @@ async function main() {
   await app.register(authRoutes)
   await app.register(storyRoutes)
   await app.register(paymentRoutes)
+  await app.register(adminRoutes)
 
   await app.listen({ port: env.PORT, host: '0.0.0.0' })
 }

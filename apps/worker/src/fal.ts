@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { VIDEO_MODEL } from '@kidsstory/shared'
+import { IMAGE_EDIT_MODEL, VIDEO_MODEL } from '@kidsstory/shared'
 import { env } from './env.js'
 
 const AVATAR_STYLE =
@@ -70,6 +70,36 @@ export async function generateScene(avatarUrl: string, scenePrompt: string): Pro
   })
 }
 
+interface FalEditResponse {
+  images?: Array<{ url?: string }>
+}
+
+export async function buildReelFirstFrame(photoPaths: string[], fullPrompt: string): Promise<string> {
+  const imageUris = await Promise.all(photoPaths.map(photoToDataUri))
+  const res = await fetch(`https://fal.run/${IMAGE_EDIT_MODEL}`, {
+    method: 'POST',
+    headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: fullPrompt,
+      image_urls: imageUris,
+      image_size: 'portrait_16_9',
+      num_images: 1,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new FalError(`fal ${IMAGE_EDIT_MODEL} responded ${res.status}: ${text.slice(0, 300)}`, res.status)
+  }
+  const body = (await res.json()) as FalEditResponse
+  const url = body.images?.[0]?.url
+  if (!url) throw new FalError(`fal ${IMAGE_EDIT_MODEL} returned no image`, 502)
+  return url
+}
+
+export async function photoDataUri(relPath: string): Promise<string> {
+  return photoToDataUri(relPath)
+}
+
 interface FalVideoResponse {
   video?: { url?: string }
 }
@@ -105,14 +135,21 @@ async function callFalQueue(model: string, input: Record<string, unknown>): Prom
   return result.json()
 }
 
-export async function animateScene(sceneImageUrl: string, motionPrompt: string): Promise<string> {
-  const body = (await callFalQueue(VIDEO_MODEL.model, {
+export async function animateScene(
+  sceneImageUrl: string,
+  motionPrompt: string,
+  options: { aspectRatio?: '16:9' | '9:16'; negativePrompt?: string } = {},
+): Promise<string> {
+  const input: Record<string, unknown> = {
     prompt: motionPrompt,
     image_url: sceneImageUrl,
     resolution: VIDEO_MODEL.resolution,
     duration: VIDEO_MODEL.duration,
     generate_audio: VIDEO_MODEL.generateAudio,
-  })) as FalVideoResponse
+  }
+  if (options.aspectRatio) input.aspect_ratio = options.aspectRatio
+  if (options.negativePrompt) input.negative_prompt = options.negativePrompt
+  const body = (await callFalQueue(VIDEO_MODEL.model, input)) as FalVideoResponse
   const url = body.video?.url
   if (!url) throw new FalError(`fal ${VIDEO_MODEL.model} returned no video`, 502)
   return url

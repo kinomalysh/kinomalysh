@@ -1,11 +1,17 @@
 import { Worker } from 'bullmq'
 import { Redis } from 'ioredis'
 import { eq, sql } from 'drizzle-orm'
-import { createDb, stories, tokenLedger, users } from '@kidsstory/db'
-import { getPlotDef, QUEUE_CASTING, QUEUE_RENDER } from '@kidsstory/shared'
-import type { CastingJobData, RenderJobData } from '@kidsstory/shared'
+import { adReels, createDb, stories, tokenLedger, users } from '@kidsstory/db'
+import {
+  getPlotDef,
+  QUEUE_ADREEL,
+  QUEUE_CASTING,
+  QUEUE_RENDER,
+  REEL_NEGATIVE_PROMPT,
+} from '@kidsstory/shared'
+import type { AdReelJobData, CastingJobData, RenderJobData } from '@kidsstory/shared'
 import { env } from './env.js'
-import { generateAvatars, generateScene } from './fal.js'
+import { animateScene, buildReelFirstFrame, generateAvatars, generateScene, photoDataUri } from './fal.js'
 
 const db = createDb(env.DATABASE_URL)
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null })
@@ -61,10 +67,11 @@ const renderWorker = new Worker<RenderJobData>(
     }
 
     const avatarUrl = story.avatars[story.chosenAvatar]
-    console.log(`[render] story ${story.id}: generating ${plot.scenePrompts.length} scenes`)
+    const scenePrompts = story.scenePrompts.length ? story.scenePrompts : plot.scenePrompts
+    console.log(`[render] story ${story.id}: generating ${scenePrompts.length} scenes`)
 
     const scenes: string[] = []
-    for (const prompt of plot.scenePrompts) {
+    for (const prompt of scenePrompts) {
       scenes.push(await generateScene(avatarUrl, prompt))
       await setStatus(story.id, { scenes })
     }
@@ -78,6 +85,51 @@ const renderWorker = new Worker<RenderJobData>(
   },
   { connection, concurrency: 2 },
 )
+
+async function setReelStatus(reelId: string, patch: Partial<typeof adReels.$inferInsert>) {
+  await db
+    .update(adReels)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(adReels.id, reelId))
+}
+
+const adReelWorker = new Worker<AdReelJobData>(
+  QUEUE_ADREEL,
+  async (job) => {
+    const reel = await db.query.adReels.findFirst({ where: eq(adReels.id, job.data.reelId) })
+    if (!reel) throw new Error(`reel ${job.data.reelId} not found`)
+    if (reel.inputPhotos.length === 0) throw new Error(`reel ${reel.id} has no input photos`)
+
+    let sceneImageUrl: string
+    if (reel.kind === 't2v') {
+      console.log(`[adreel] ${reel.id}: building first frame`)
+      await setReelStatus(reel.id, { status: 'framing' })
+      sceneImageUrl = await buildReelFirstFrame(reel.inputPhotos, reel.fullPrompt)
+      await setReelStatus(reel.id, { firstFrameUrl: sceneImageUrl })
+    } else {
+      sceneImageUrl = await photoDataUri(reel.inputPhotos[0])
+    }
+
+    console.log(`[adreel] ${reel.id}: animating`)
+    await setReelStatus(reel.id, { status: 'animating' })
+    const motionPrompt = reel.motionPrompt?.trim() || reel.fullPrompt
+    const videoUrl = await animateScene(sceneImageUrl, motionPrompt, {
+      aspectRatio: '9:16',
+      negativePrompt: REEL_NEGATIVE_PROMPT,
+    })
+
+    await setReelStatus(reel.id, { status: 'ready', resultUrl: videoUrl })
+    console.log(`[adreel] ${reel.id}: ready`)
+  },
+  { connection, concurrency: 2 },
+)
+
+adReelWorker.on('failed', async (job, error) => {
+  console.error(`[adreel] failed: ${error.message}`)
+  if (job?.data.reelId && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+    await setReelStatus(job.data.reelId, { status: 'failed', failReason: error.message })
+  }
+})
 
 castingWorker.on('failed', async (job, error) => {
   console.error(`[casting] failed: ${error.message}`)
@@ -94,11 +146,11 @@ renderWorker.on('failed', async (job, error) => {
   }
 })
 
-console.log('[worker] listening for casting and render jobs')
+console.log('[worker] listening for casting, render and adreel jobs')
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
-    await Promise.all([castingWorker.close(), renderWorker.close()])
+    await Promise.all([castingWorker.close(), renderWorker.close(), adReelWorker.close()])
     process.exit(0)
   })
 }

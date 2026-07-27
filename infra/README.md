@@ -169,6 +169,72 @@ Neucha с `fonts.googleapis.com`. Без этих исключений вёрс�
 reload упадёт с `permission denied`. Лечится
 `sudo chown caddy:caddy /var/log/caddy/access.log`.
 
+## Админка (admin.kinomalysh.ru)
+
+Отдельное SPA (`apps/admin`) на поддомене `admin`. Вход по логину/паролю из таблицы
+`admins` (не связана с клиентскими юзерами). Разделы: дашборд, заказы (просмотр,
+статусы, правка промптов сцен в БД, перегенерация), пользователи (баланс токенов),
+генерация рекламных роликов через fal.ai (Pixar-стиль и 9:16 зашиты по умолчанию).
+
+Зависит от развёрнутого API и воркера — без них админка не работает.
+
+### 1. DNS
+
+В панели Timeweb Cloud → Домены и SSL → `kinomalysh.ru` → DNS добавить:
+
+```
+A  admin  →  217.149.22.50
+```
+
+Проверять только по HTTPS-резолверу (см. раздел про DNS выше):
+
+```bash
+curl -s "https://dns.google/resolve?name=admin.kinomalysh.ru&type=A" | jq .
+```
+
+Caddy выпустит сертификат на `admin.kinomalysh.ru` автоматически, как только запись
+зарезолвится.
+
+### 2. Блок в Caddyfile
+
+Уже в `infra/Caddyfile`: статика из `/srv/kinomalysh/admin`, `handle_path /api/*`
+проксирует на `localhost:3001` (срезая префикс `/api`), `/uploads/*` — туда же без
+среза. CSP слегка ослаблен под превью роликов: `img-src`/`media-src` пускают `https:`
+(ссылки fal), `script-src 'self'` без `unsafe-inline`.
+
+### 3. API и воркер как сервисы
+
+Юниты в `infra/systemd/`. Секреты — в `/etc/kinomalysh/` (`chmod 600`):
+
+- `api.env` — `JWT_SECRET`, `WEB_URL`, `ADMIN_URL=https://admin.kinomalysh.ru`,
+  `PUBLIC_API_URL`, `CASHERA_*`, `SMTP_*`, `UPLOADS_DIR`.
+- `worker.env` — `FAL_KEY`, `REDIS_URL`, `UPLOADS_DIR` (тот же путь, что у API).
+
+```bash
+scp infra/systemd/*.service kinomalysh:/tmp/
+ssh kinomalysh 'sudo install -m644 /tmp/kinomalysh-*.service /etc/systemd/system/ && \
+  sudo systemctl daemon-reload && \
+  sudo systemctl enable --now kinomalysh-api kinomalysh-worker'
+```
+
+### 4. Схема БД и первый админ
+
+```bash
+ssh kinomalysh 'cd /srv/kinomalysh/app && npm run db:push -w apps/api'
+ssh kinomalysh 'cd /srv/kinomalysh/app && npm run admin:create -w apps/api -- <login> "<Имя>" "<пароль>"'
+```
+
+Без третьего аргумента пароль сгенерируется и выведется в консоль.
+
+### 5. Выкладка фронта
+
+```bash
+./infra/deploy-admin.sh
+```
+
+Собирает `apps/admin`, валидирует Caddyfile до подмены, льёт `dist/` в
+`/srv/kinomalysh/admin`, перезагружает Caddy, проверяет 200 на `https://admin.kinomalysh.ru/`.
+
 ## Что ещё не сделано
 
 - [x] Делегирование на Timeweb — зона авторитетна
