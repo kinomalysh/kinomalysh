@@ -10,6 +10,7 @@ import {
   REEL_NEGATIVE_PROMPT,
 } from '@kidsstory/shared'
 import type { AdReelJobData, CastingJobData, RenderJobData } from '@kidsstory/shared'
+import { isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { env } from './env.js'
 import { animateScene, buildReelFirstFrame, generateAvatars, generateScene, photoDataUri } from './fal.js'
 
@@ -118,7 +119,22 @@ const adReelWorker = new Worker<AdReelJobData>(
       negativePrompt: REEL_NEGATIVE_PROMPT,
     })
 
-    await setReelStatus(reel.id, { status: 'ready', resultUrl: videoUrl })
+    let resultKey: string | null = null
+    if (isStorageConfigured) {
+      try {
+        console.log(`[adreel] ${reel.id}: uploading to S3`)
+        const res = await fetch(videoUrl)
+        if (!res.ok) throw new Error(`download ${res.status}`)
+        const bytes = new Uint8Array(await res.arrayBuffer())
+        resultKey = `reels/${reel.id}.mp4`
+        await uploadObject(resultKey, bytes, 'video/mp4')
+      } catch (error) {
+        resultKey = null
+        console.error(`[adreel] ${reel.id}: S3 upload failed, keeping fal url — ${String(error)}`)
+      }
+    }
+
+    await setReelStatus(reel.id, { status: 'ready', resultUrl: videoUrl, resultKey })
     console.log(`[adreel] ${reel.id}: ready`)
   },
   { connection, concurrency: 2 },

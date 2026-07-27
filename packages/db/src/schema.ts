@@ -132,6 +132,7 @@ export const adReels = pgTable('ad_reels', {
   firstFrameUrl: text('first_frame_url'),
   status: varchar('status', { length: 16 }).notNull().default('queued'),
   resultUrl: text('result_url'),
+  resultKey: text('result_key'),
   failReason: text('fail_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

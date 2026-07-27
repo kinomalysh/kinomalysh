@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import bcrypt from 'bcryptjs'
 import { and, count, desc, eq, gte, ilike, or, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { adReels, admins, payments, stories, tokenLedger, users } from '@kidsstory/db'
+import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
 import {
   adjustBalanceSchema,
   adminLoginSchema,
@@ -252,7 +253,7 @@ async function protectedAdminRoutes(app: FastifyInstance) {
       .offset((page - 1) * PAGE_SIZE)
     const [total] = await db.select({ v: count() }).from(adReels)
     return {
-      reels: rows.map(reelDto),
+      reels: await Promise.all(rows.map(reelDto)),
       total: total.v,
       page,
       pageSize: PAGE_SIZE,
@@ -263,7 +264,24 @@ async function protectedAdminRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string }
     const reel = await db.query.adReels.findFirst({ where: eq(adReels.id, id) })
     if (!reel) return reply.code(404).send({ error: 'Ролик не найден' })
-    return { reel: reelDto(reel) }
+    return { reel: await reelDto(reel) }
+  })
+
+  app.delete('/admin/reels/:id', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const reel = await db.query.adReels.findFirst({ where: eq(adReels.id, id) })
+    if (!reel) return reply.code(404).send({ error: 'Ролик не найден' })
+
+    if (reel.resultKey && isStorageConfigured) {
+      await deleteObject(reel.resultKey).catch((error: unknown) => req.log.warn({ error }, 'S3 delete failed'))
+    }
+    await Promise.all(
+      reel.inputPhotos.map((rel) =>
+        rm(path.join(env.UPLOADS_DIR, rel), { force: true }).catch(() => undefined),
+      ),
+    )
+    await db.delete(adReels).where(eq(adReels.id, id))
+    return { ok: true }
   })
 
   app.post('/admin/reels', async (req, reply) => {
@@ -308,11 +326,23 @@ async function protectedAdminRoutes(app: FastifyInstance) {
       })
       .returning()
     await adReelQueue.add('adreel', { reelId: reel.id })
-    return reply.code(201).send({ reel: reelDto(reel) })
+    return reply.code(201).send({ reel: await reelDto(reel) })
   })
 }
 
-function reelDto(reel: typeof adReels.$inferSelect) {
+async function reelDto(reel: typeof adReels.$inferSelect) {
+  let resultUrl = reel.resultUrl
+  let downloadUrl = reel.resultUrl
+  if (reel.resultKey && isStorageConfigured) {
+    try {
+      const filename = `${(reel.title ?? 'kinomalysh').replace(/[^\w.-]+/g, '_')}.mp4`
+      resultUrl = await presignGet(reel.resultKey, { expiresIn: 3600 })
+      downloadUrl = await presignGet(reel.resultKey, { expiresIn: 3600, downloadFilename: filename })
+    } catch {
+      resultUrl = reel.resultUrl
+      downloadUrl = reel.resultUrl
+    }
+  }
   return {
     id: reel.id,
     kind: reel.kind,
@@ -323,7 +353,9 @@ function reelDto(reel: typeof adReels.$inferSelect) {
     inputPhotos: reel.inputPhotos,
     firstFrameUrl: reel.firstFrameUrl,
     status: reel.status,
-    resultUrl: reel.resultUrl,
+    resultUrl,
+    downloadUrl,
+    stored: Boolean(reel.resultKey),
     failReason: reel.failReason,
     createdAt: reel.createdAt.toISOString(),
     updatedAt: reel.updatedAt.toISOString(),

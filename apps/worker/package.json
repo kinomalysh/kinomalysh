@@ -10,6 +10,7 @@
   "dependencies": {
     "@kidsstory/db": "*",
     "@kidsstory/shared": "*",
+    "@kidsstory/storage": "*",
     "bullmq": "^5.34.5",
     "drizzle-orm": "^0.38.3",
     "ioredis": "^5.4.2",
