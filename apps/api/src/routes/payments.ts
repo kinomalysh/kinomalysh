@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { payments, webhookEvents } from '@kidsstory/db'
 import { casheraWebhookSchema, getPack, PACKS, topupSchema } from '@kidsstory/shared'
 import { db } from '../context.js'
+import { isPaymentsConfigured } from '../env.js'
 import {
   CasheraError,
   createCasheraPayment,
@@ -16,6 +17,9 @@ export async function paymentRoutes(app: FastifyInstance) {
   app.get('/payments/packs', async () => ({ packs: PACKS }))
 
   app.post('/payments/topup', { preHandler: [app.authenticate] }, async (req, reply) => {
+    if (!isPaymentsConfigured) {
+      return reply.code(503).send({ error: 'Оплата временно недоступна' })
+    }
     const body = topupSchema.parse(req.body)
     const pack = getPack(body.packId)
     if (!pack) return reply.code(400).send({ error: 'Неизвестный пакет' })
