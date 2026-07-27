@@ -26,20 +26,16 @@ export function AppShell() {
       <Fireflies />
       <header className="sticky top-0 z-30 -mx-4 mb-2 border-b-2 border-dashed border-ink-900/15 bg-paper/95 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
-          <NavLink to={ROUTES.home} className="group flex shrink-0 items-center gap-2.5">
+          <NavLink
+            to={ROUTES.home}
+            aria-label={BRAND}
+            className="group flex shrink-0 items-center"
+          >
             <img
-              src={asset('logo.svg')}
-              alt=""
-              width={40}
-              height={40}
-              className="h-10 w-10 rotate-[-4deg] rounded-xl border-2 border-ink-900 shadow-[2px_3px_0_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:rotate-0"
+              src={asset('logo-wordmark.png')}
+              alt={BRAND}
+              className="h-11 w-auto transition-transform duration-300 group-hover:scale-[1.03] sm:h-14"
             />
-            <span className="flex flex-col">
-              <span className="font-display text-xl leading-none text-ink-900">{BRAND}</span>
-              <span className="hand-note mt-0.5 text-[13px] leading-none rotate-[-1deg]">
-                сказки на ночь
-              </span>
-            </span>
           </NavLink>
 
           {isLanding && (

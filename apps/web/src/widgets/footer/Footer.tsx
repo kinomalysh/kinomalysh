@@ -18,16 +18,7 @@ export function Footer() {
 
       <div className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <img
-              src={asset('logo.svg')}
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 shrink-0 rotate-[-4deg] rounded-xl border-2 border-ink-900"
-            />
-            <span className="font-display text-lg text-ink-900">{BRAND}</span>
-          </div>
+          <img src={asset('logo-wordmark.png')} alt={BRAND} className="h-11 w-auto" />
           <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-ink-800">
             Персональные сказки, где главную роль играет ваш ребёнок. Мультфильмы и книги с
             озвучкой — за 15 минут.

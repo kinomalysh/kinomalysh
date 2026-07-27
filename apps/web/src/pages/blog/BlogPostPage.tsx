@@ -33,7 +33,7 @@ function buildArticleLd(post: BlogPost, path: string) {
       '@type': 'Organization',
       name: siteConfig.name,
       url: siteConfig.url,
-      logo: { '@type': 'ImageObject', url: `${siteConfig.url}/logo.png` },
+      logo: { '@type': 'ImageObject', url: `${siteConfig.url}/logo-wordmark.png` },
     },
   }
 }

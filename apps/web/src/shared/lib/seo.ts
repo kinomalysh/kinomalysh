@@ -72,7 +72,7 @@ export function buildOrganizationLd() {
     '@type': 'Organization',
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: `${siteConfig.url}/logo.png`,
+    logo: `${siteConfig.url}/logo-wordmark.png`,
     description: siteConfig.description,
     slogan: 'Ваш ребёнок — герой мультфильма',
     knowsAbout: [
@@ -154,7 +154,7 @@ export function buildVideoLd(video: {
     publisher: {
       '@type': 'Organization',
       name: siteConfig.name,
-      logo: { '@type': 'ImageObject', url: `${siteConfig.url}/logo.png` },
+      logo: { '@type': 'ImageObject', url: `${siteConfig.url}/logo-wordmark.png` },
     },
   }
 }

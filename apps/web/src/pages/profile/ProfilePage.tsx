@@ -83,13 +83,7 @@ export function ProfilePage() {
             <p className="hand-note text-lg rotate-[-1deg]">
               читательский билет {BRAND.toLowerCase()}а
             </p>
-            <img
-              src={asset('logo.svg')}
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 rotate-[6deg] rounded-lg border-2 border-ink-900"
-            />
+            <img src={asset('logo-wordmark.png')} alt={BRAND} className="h-7 w-auto shrink-0" />
           </div>
           <p className="mt-1 font-display text-2xl text-ink-900">{name}</p>
           <div className="mt-4 border-t-2 border-dashed border-ink-900/15 pt-4">
