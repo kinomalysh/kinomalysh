@@ -16,14 +16,14 @@ const SCENES: SeedScene[] = [
     kind: 'title',
     title: 'Вступительный титр',
     prompt:
-      'Ночное небо, россыпь звёзд, тёплый огонёк подлетает и зажигает свет, спокойный фон для надписи, без текста',
+      'Calm night sky full of scattered stars, a warm golden spark drifts in from the side and slowly blooms into a soft glow in the centre of frame, empty space left for a title card, very slow drifting camera',
     voiceoverText: '[warmly] Киномалыш представляет… историю про Тёму.',
   },
   {
     kind: 'library',
     title: 'Знакомство',
     prompt:
-      'Уютная ванная вечером: тёплый ночник, запотевшее зеркало, стаканчик со щёткой, за окном зажигаются звёзды, ребёнка в кадре нет, мягкий наплыв камеры',
+      'Cozy little bathroom in the evening, warm night lamp glow, fogged mirror, a cup with a toothbrush on the sink, stars lighting up in the window behind, no people in frame, gentle slow push-in',
     voiceoverText:
       'Наступил вечер. Звёздочки зажглись за окном, и в маленькой уютной ванной началось самое нелюбимое время Тёмы — чистить зубы.',
   },
@@ -31,7 +31,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Чувство',
     prompt:
-      'Мальчик в полосатой пижаме, сонный, прячет зубную щётку за спину, тяжело вздыхает, косится на дверь',
+      'Sleepy little boy in striped pyjamas hides a toothbrush behind his back, sighs heavily with drooping shoulders, glances sideways at the door hoping to escape, cozy bathroom light',
     voiceoverText:
       'Тёме казалось, что это долго и скучно. Он вздыхал, прятал щётку за спину и думал: вот бы убежать играть! [curious] Тебе тоже так бывает?',
   },
@@ -39,7 +39,7 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Зов',
     prompt:
-      'Крупный план: зубная щётка в стаканчике начинает мерцать тёплым золотым светом, вокруг вьются искорки, ребёнка нет',
+      'Close-up of a toothbrush standing in a cup, it starts to shimmer with warm golden light, tiny sparkles swirl around the bristles, no people in frame, slow gentle zoom',
     voiceoverText:
       '[whispers] Вдруг щётка тихонько засветилась. Дзинь-дилинь! [excited] Кажется, она хочет проснуться. Позови её! Скажи громко: щёточка, просыпайся!',
   },
@@ -47,7 +47,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Поворот',
     prompt:
-      'Зубная щётка вспыхивает золотом в руке мальчика, он изумлён, глаза широко раскрыты, восторг на лице',
+      'The toothbrush in the little boy\'s hand bursts into warm golden light, the boy gasps in amazement, huge eyes wide open, pure delight spreading across his face, sparkles reflecting in his eyes',
     voiceoverText:
       '[whispers] И щётка проснулась! «Здравствуй, Тёма! Я не простая, я волшебная. А ты сегодня мой храбрый помощник.» [warmly] Чистим зубки, Тёма, — и улыбка ярче звёздочки!',
   },
@@ -55,7 +55,7 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Шалуны',
     prompt:
-      'Крупный план рта, лицо не видно: между зубами весело скачут крошечные милые сахарные человечки, круглые, большеглазые, в смешных колпачках, водят хоровод',
+      'Extreme close-up inside a mouth, face not visible: tiny cute round sugar goblins with big eyes and funny little caps hop and dance in a ring between the white teeth, mischievous and playful, soft glow',
     voiceoverText:
       '[playfully] Щётка посветила — ой-ой-ой! На зубах у Тёмы поселились сахарные шалуны. Днём они грызут сладкие крошки, а вечером водят хороводы и совсем не хотят уходить.',
   },
@@ -63,7 +63,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Решимость',
     prompt:
-      'Мальчик мгновение колеблется, потом решительно и крепко сжимает волшебную зубную щётку, взгляд смелый, подбородок вверх',
+      'Little boy hesitates for a moment, then grips the glowing magic toothbrush tightly with both hands, chin lifted, brave determined look in his eyes, warm rim light',
     voiceoverText:
       '«Поможешь навести порядок?» — спросила щётка. Тёма сомневался… а потом крепко-крепко сжал её в руке. Ведь помощники не отступают!',
   },
@@ -71,7 +71,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Заклинание чистоты',
     prompt:
-      'Мальчик увлечённо чистит зубы, щётка светится и оставляет золотой след, движения крупные и читаемые вверх-вниз и кружочками, пена искрится',
+      'Little boy brushing his teeth with focus and joy, the glowing toothbrush leaves a golden trail in the air, clear readable up-down strokes and little circles, sparkling foam, cheerful energy',
     voiceoverText:
       '[excited] Тогда щётка запела волшебное заклинание чистоты. Повторяй за мной! Вверх-вниз, вжик-вжик, кружок-кружок, влево-вправо — чисто!',
   },
@@ -79,14 +79,14 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Магия',
     prompt:
-      'Золотые искры закручиваются вихрем по ванной, тёплое свечение заливает кадр, ребёнка нет',
+      'Golden sparks swirl in a warm vortex through the little bathroom, glowing light washes over tiles and mirror, no people in frame, smooth circular camera movement',
     voiceoverText: '',
   },
   {
     kind: 'hero',
     title: 'Кульминация',
     prompt:
-      'Мальчик поднимает зубную щётку высоко, как волшебную палочку, и весело взмахивает, сахарные человечки со смехом разлетаются и превращаются в золотые искорки',
+      'Little boy raises the glowing toothbrush high like a magic wand and swings it cheerfully, the tiny sugar goblins scatter laughing and burst into golden sparkles around him, triumphant joyful moment',
     voiceoverText:
       '[excited] Тёма поднял щётку высоко-высоко — и вжух-вжух-вжух! — весёлые шалуны закружились, засмеялись и рассыпались золотыми искорками. Ура! Получилось!',
   },
@@ -94,7 +94,7 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Чистые зубы',
     prompt:
-      'Крупный план рта, лицо не видно: зубы сияют белизной, по эмали пробегает звёздный блик, вокруг тают золотые искорки',
+      'Extreme close-up inside a mouth, face not visible: perfectly white shining teeth, a star-shaped sparkle runs across the enamel, last golden specks melting away, no goblins left',
     voiceoverText:
       'Зубки засверкали, как звёздочки в ночном небе, и тихонько сказали: спасибо, Тёма!',
   },
@@ -102,7 +102,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Тепло',
     prompt:
-      'Мальчик смотрит в зеркало и улыбается сияющей чистой улыбкой, щёки румяные, в глазах гордость, слегка приподнимается на носочках',
+      'Little boy looks into the bathroom mirror and beams with a bright clean smile, rosy cheeks, proud shining eyes, rising slightly on his tiptoes, warm cozy light',
     voiceoverText:
       '[warmly] Тёма посмотрел в зеркало — и улыбнулся. И улыбка вышла самой яркой на свете. Потому что он справился сам.',
   },
@@ -110,7 +110,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Тихий повтор',
     prompt:
-      'Свет в ванной мягче и синее, мальчик чистит зубы снова, но медленно, бережно, почти сонно, движения плавные, глаза сами закрываются, искры оседают как снежинки',
+      'Softer bluish night light in the bathroom, sleepy little boy brushing his teeth again but slowly and gently, calm flowing movements, eyelids growing heavy, sparkles settling down like snowflakes',
     voiceoverText:
       '[whispers] «А теперь ещё разок, — шепнула щётка, — только тихо-тихо. Как будто укладываем зубки спать.» Вверх-вниз… вжик-вжик… кружок-кружок… влево-вправо… чисто.',
   },
@@ -118,7 +118,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Мораль',
     prompt:
-      'Мальчик ставит зубную щётку в стаканчик, гладит её на прощание, щётка мигает золотом в ответ, мальчик зевает и улыбается',
+      'Little boy places the toothbrush back into the cup and pats it goodbye, the brush blinks with a small golden glow in answer, the boy yawns and smiles sleepily, soft warm night light',
     voiceoverText:
       'Вот и всё. Оказывается, даже самое обычное дело становится волшебным, если делать его с улыбкой. Чистим зубки, Тёма, — и улыбка ярче звёздочки! Запомни: чищу утром, чищу днём, чистим зубки перед сном!',
   },
@@ -126,44 +126,59 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Укладка',
     prompt:
-      'Сияющий зуб-звёздочка мягко плывёт среди золотых звёзд по спокойному ночному небу, растворяясь в тёплом свете, ребёнка нет',
+      'A glowing star-shaped tooth floats gently among golden stars across a calm night sky, slowly dissolving into warm light, no people in frame, very slow dreamy camera drift',
     voiceoverText:
       '[warmly] С того вечера Тёма чистит зубы каждый день. Спокойной ночи, Тёма. Пусть твоя улыбка светит ярко, как звёзды.',
   },
   {
     kind: 'title',
     title: 'Финальные титры',
-    prompt: 'Тёплый звёздный фон, спокойный, для строк титров, без текста',
+    prompt:
+      'Warm calm starry background with slow floating golden specks, plenty of empty space for end credit lines, minimal motion',
     voiceoverText: 'В главной роли — Тёма.',
   },
 ]
 
 async function main() {
   const existing = await db.query.products.findFirst({ where: eq(products.slug, SLUG) })
-  if (existing) {
-    console.log(`Продукт «${SLUG}» уже есть — пропускаю (id ${existing.id})`)
-    process.exit(0)
+  const product =
+    existing ??
+    (
+      await db
+        .insert(products)
+        .values({
+          slug: SLUG,
+          title: 'Тёма и волшебная щётка',
+          tagline: 'Пилотный товарный ролик · чистка зубов',
+          status: 'active',
+        })
+        .returning()
+    )[0]
+
+  const saved = await db.query.productScenes.findMany({
+    where: eq(productScenes.productId, product.id),
+  })
+  const byPosition = new Map(saved.map((s) => [s.position, s]))
+
+  for (const [index, scene] of SCENES.entries()) {
+    const position = index + 1
+    const values = {
+      kind: scene.kind,
+      title: scene.title,
+      prompt: scene.prompt,
+      voiceoverText: scene.voiceoverText || null,
+      updatedAt: new Date(),
+    }
+    const current = byPosition.get(position)
+    if (current) {
+      await db.update(productScenes).set(values).where(eq(productScenes.id, current.id))
+    } else {
+      await db.insert(productScenes).values({ productId: product.id, position, ...values })
+    }
   }
-  const [product] = await db
-    .insert(products)
-    .values({
-      slug: SLUG,
-      title: 'Тёма и волшебная щётка',
-      tagline: 'Пилотный товарный ролик · чистка зубов',
-      status: 'active',
-    })
-    .returning()
-  await db.insert(productScenes).values(
-    SCENES.map((s, i) => ({
-      productId: product.id,
-      position: i + 1,
-      kind: s.kind,
-      title: s.title,
-      prompt: s.prompt,
-      voiceoverText: s.voiceoverText || null,
-    })),
-  )
-  console.log(`Засеян продукт «${product.title}» с ${SCENES.length} сценами`)
+
+  const verb = existing ? 'Обновлён' : 'Засеян'
+  console.log(`${verb} продукт «${product.title}»: ${SCENES.length} сцен`)
   process.exit(0)
 }
 
