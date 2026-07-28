@@ -22,6 +22,10 @@ interface Scene {
   voUrl: string | null
   failReason: string | null
   updatedAt: string
+  approvedAt: string | null
+  approvedClipUrl: string | null
+  approvedVoUrl: string | null
+  isLatestApproved: boolean
 }
 
 interface Product {
@@ -223,6 +227,20 @@ function SceneCard({
 
   const clipBusy = CLIP_ACTIVE.has(scene.clipStatus)
   const voBusy = VO_ACTIVE.has(scene.voStatus)
+  const approved = Boolean(scene.approvedAt)
+
+  const setApproved = async (value: boolean) => {
+    setSaving(true)
+    setErr('')
+    try {
+      await api(`/admin/scenes/${scene.id}/approve`, { method: 'POST', body: { approved: value } })
+      onChanged()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const save = async () => {
     setSaving(true)
@@ -327,6 +345,9 @@ function SceneCard({
             Сохранить
           </Button>
         )}
+        {dirty && approved && (
+          <span className="text-xs text-berry">Сохранение снимет утверждение и мастер-клип</span>
+        )}
         <Button variant="ghost" loading={clipBusy} onClick={() => generate('clip')} disabled={kind === 'title'}>
           {scene.clipUrl ? 'Заменить клип' : 'Сгенерировать клип'}
         </Button>
@@ -347,21 +368,72 @@ function SceneCard({
       )}
       {voBusy && <StageBar stages={VO_STAGES} status={scene.voStatus} since={scene.updatedAt} />}
 
-      {(scene.clipUrl || scene.voUrl) && (
-        <div className="flex flex-wrap items-start gap-4 pt-1">
-          {scene.clipUrl && <video src={scene.clipUrl} controls className="max-h-52 rounded-lg" />}
-          {scene.voUrl && (
-            <div className="space-y-1">
-              <p className="text-xs text-ink-3">Озвучка</p>
-              <audio src={scene.voUrl} controls className="h-9" />
-            </div>
+      {scene.approvedClipUrl && (
+        <div className="rounded-xl border border-leaf/40 bg-leaf/5 p-4">
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-leaf">✓ Утверждённый пример</span>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-3">
+              {scene.kind === 'hero' ? 'уникальный, по фото ребёнка' : 'одинаковый у всех заказов'}
+            </span>
+            {scene.approvedAt && (
+              <span className="text-xs text-ink-3">
+                {new Date(scene.approvedAt).toLocaleString('ru-RU', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                })}
+              </span>
+            )}
+            <Button variant="ghost" loading={saving} onClick={() => setApproved(false)}>
+              Снять утверждение
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-start gap-4">
+            <video src={scene.approvedClipUrl} controls className="max-h-52 rounded-lg" />
+            {scene.approvedVoUrl && (
+              <div className="space-y-1">
+                <p className="text-xs text-ink-3">Утверждённая озвучка</p>
+                <audio src={scene.approvedVoUrl} controls className="h-9" />
+              </div>
+            )}
+          </div>
+          {scene.kind === 'hero' && (
+            <p className="mt-3 text-xs text-ink-3">
+              Клиенту сцена соберётся заново по его фото — здесь пример на тестовом ребёнке,
+              он подтверждает, что промпт проходит фильтр и даёт нужный результат.
+            </p>
           )}
+        </div>
+      )}
+
+      {(scene.clipUrl || scene.voUrl) && !scene.isLatestApproved && (
+        <div className="rounded-xl border border-line bg-surface-2/40 p-4">
+          <p className="mb-3 text-sm font-semibold">
+            {approved ? 'Новый прогон — сравните с утверждённым' : 'Последний прогон'}
+          </p>
+          <div className="flex flex-wrap items-start gap-4">
+            {scene.clipUrl && <video src={scene.clipUrl} controls className="max-h-52 rounded-lg" />}
+            {scene.voUrl && (
+              <div className="space-y-1">
+                <p className="text-xs text-ink-3">Озвучка</p>
+                <audio src={scene.voUrl} controls className="h-9" />
+              </div>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+            <Button loading={saving} onClick={() => setApproved(true)}>
+              {approved ? 'Утвердить этот вариант' : 'Утвердить сцену'}
+            </Button>
+            <span className="text-xs text-ink-3">
+              {approved
+                ? 'Заменит утверждённый пример — именно он идёт клиентам'
+                : 'Без утверждения продукт не выкатить'}
+            </span>
+          </div>
         </div>
       )}
     </Card>
   )
 }
-
 
 function ProductSettings({ product, onChanged }: { product: Product; onChanged: () => void }) {
   const { data: readiness, reload: reloadReadiness } = useAsync(
@@ -399,7 +471,7 @@ function ProductSettings({ product, onChanged }: { product: Product; onChanged: 
       const res = await api<{ queued: number }>(`/admin/products/${product.id}/masters`, {
         method: 'POST',
       })
-      setNote(res.queued ? `В очередь поставлено задач: ${res.queued}` : 'Все мастера уже готовы')
+      setNote(res.queued ? `В очередь поставлено задач: ${res.queued}` : 'Все прогоны уже есть')
       onChanged()
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Ошибка')
@@ -427,12 +499,7 @@ function ProductSettings({ product, onChanged }: { product: Product; onChanged: 
           <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>
         <Field label="Цена, токенов">
-          <Input
-            type="number"
-            min={0}
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
+          <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
         </Field>
       </div>
 
@@ -462,10 +529,14 @@ function ProductSettings({ product, onChanged }: { product: Product; onChanged: 
           </Button>
         )}
         <Button variant="ghost" loading={busy} onClick={buildMasters}>
-          Сгенерировать мастера
+          Прогнать все сцены
         </Button>
         {product.status === 'active' ? (
-          <Button variant="ghost" loading={busy} onClick={() => patch({ status: 'draft' }, 'Снят с витрины')}>
+          <Button
+            variant="ghost"
+            loading={busy}
+            onClick={() => patch({ status: 'draft' }, 'Снят с витрины')}
+          >
             Снять с витрины
           </Button>
         ) : (

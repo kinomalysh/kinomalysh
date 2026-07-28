@@ -151,6 +151,9 @@ export const productScenes = pgTable('product_scenes', {
   voKey: text('vo_key'),
   voStatus: varchar('vo_status', { length: 12 }).notNull().default('idle'),
   failReason: text('fail_reason'),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  approvedClipKey: text('approved_clip_key'),
+  approvedVoKey: text('approved_vo_key'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

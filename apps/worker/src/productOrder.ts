@@ -5,8 +5,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { createDb, productScenes, products, stories, storyScenes } from '@kidsstory/db'
 import { buildProductScenePrompt, REEL_NEGATIVE_PROMPT } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
-import { animateFromText, animateScene, buildReelFirstFrame, ContentPolicyError } from './fal.js'
-import { generateVoiceover } from './elevenlabs.js'
+import { animateScene, buildReelFirstFrame, ContentPolicyError } from './fal.js'
 import { buildSegment, concatSegments } from './ffmpeg.js'
 
 type Db = ReturnType<typeof createDb>
@@ -42,38 +41,19 @@ async function downloadToFile(key: string, dest: string): Promise<void> {
   await writeFile(dest, await getObject(key))
 }
 
-async function ensureMasterClip(db: Db, scene: Scene): Promise<string> {
-  if (scene.clipKey) return scene.clipKey
-  const key = `products/${scene.productId}/${scene.id}.mp4`
-  const url = await withRetries(`мастер-клип ${scene.id}`, SCENE_ATTEMPTS, () =>
-    animateFromText(buildProductScenePrompt(scene.prompt), {
-      aspectRatio: '16:9',
-      negativePrompt: REEL_NEGATIVE_PROMPT,
-    }),
-  )
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`мастер-клип ${scene.id}: скачивание ${res.status}`)
-  await uploadObject(key, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
-  await db
-    .update(productScenes)
-    .set({ clipKey: key, clipUrl: url, clipStatus: 'ready', updatedAt: new Date() })
-    .where(eq(productScenes.id, scene.id))
-  return key
+function approvedClip(scene: Scene): string {
+  if (!scene.approvedClipKey) {
+    throw new OrderFailedError(`сцена ${scene.position} не утверждена — сборка невозможна`, true)
+  }
+  return scene.approvedClipKey
 }
 
-async function ensureMasterVo(db: Db, scene: Scene): Promise<string | null> {
+function approvedVo(scene: Scene): string | null {
   if (!scene.voiceoverText?.trim()) return null
-  if (scene.voKey) return scene.voKey
-  const key = `products/${scene.productId}/${scene.id}-vo.mp3`
-  const audio = await withRetries(`озвучка ${scene.id}`, SCENE_ATTEMPTS, () =>
-    generateVoiceover(scene.voiceoverText as string),
-  )
-  await uploadObject(key, audio, 'audio/mpeg')
-  await db
-    .update(productScenes)
-    .set({ voKey: key, voStatus: 'ready', updatedAt: new Date() })
-    .where(eq(productScenes.id, scene.id))
-  return key
+  if (!scene.approvedVoKey) {
+    throw new OrderFailedError(`у сцены ${scene.position} не утверждена озвучка`, true)
+  }
+  return scene.approvedVoKey
 }
 
 async function renderHeroClip(
@@ -149,8 +129,8 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
       const clipKey =
         scene.kind === 'hero'
           ? await renderHeroClip(db, scene, storyId, story.photoPath)
-          : await ensureMasterClip(db, scene)
-      const voKey = await ensureMasterVo(db, scene)
+          : approvedClip(scene)
+      const voKey = approvedVo(scene)
 
       const clipPath = path.join(workDir, `${scene.position}-clip.mp4`)
       await downloadToFile(clipKey, clipPath)

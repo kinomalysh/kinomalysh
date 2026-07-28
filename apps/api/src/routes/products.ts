@@ -42,6 +42,7 @@ const patchSceneSchema = z.object({
 })
 const reorderSchema = z.object({ orderedIds: z.array(z.string().uuid()).min(1).max(60) })
 const generateSchema = z.object({ target: z.enum(['clip', 'vo']) })
+const approveSchema = z.object({ approved: z.boolean() })
 
 const ACTIVE_CLIP = new Set(['queued', 'framing', 'animating'])
 const ACTIVE_VO = new Set(['queued', 'generating'])
@@ -56,24 +57,34 @@ async function publishBlockers(productId: string): Promise<string[]> {
 
   const blockers: string[] = []
   const noPrompt = scenes.filter((s) => !s.prompt.trim()).map((s) => s.position)
-  const noClip = scenes.filter((s) => !s.clipKey).map((s) => s.position)
+  const noClip = scenes.filter((s) => !s.approvedClipKey).map((s) => s.position)
   const noVo = scenes
-    .filter((s) => s.voiceoverText?.trim() && !s.voKey)
+    .filter((s) => s.voiceoverText?.trim() && !s.approvedVoKey)
     .map((s) => s.position)
   if (noPrompt.length) blockers.push(`нет промпта у сцен: ${noPrompt.join(', ')}`)
-  if (noClip.length) blockers.push(`не прогнаны сцены: ${noClip.join(', ')}`)
+  if (noClip.length) blockers.push(`нет утверждённого клипа у сцен: ${noClip.join(', ')}`)
   if (noVo.length) blockers.push(`нет озвучки у сцен: ${noVo.join(', ')}`)
+  const notApproved = scenes.filter((s) => !s.approvedAt).map((s) => s.position)
+  if (notApproved.length) blockers.push(`не утверждены сцены: ${notApproved.join(', ')}`)
   return blockers
 }
 
 async function sceneDto(scene: typeof productScenes.$inferSelect) {
   let clipUrl = scene.clipUrl
   let voUrl: string | null = null
+  let approvedClipUrl: string | null = null
+  let approvedVoUrl: string | null = null
   if (isStorageConfigured && scene.clipKey) {
     clipUrl = await presignGet(scene.clipKey, { expiresIn: 3600 }).catch(() => scene.clipUrl)
   }
   if (isStorageConfigured && scene.voKey) {
     voUrl = await presignGet(scene.voKey, { expiresIn: 3600 }).catch(() => null)
+  }
+  if (isStorageConfigured && scene.approvedClipKey) {
+    approvedClipUrl = await presignGet(scene.approvedClipKey, { expiresIn: 3600 }).catch(() => null)
+  }
+  if (isStorageConfigured && scene.approvedVoKey) {
+    approvedVoUrl = await presignGet(scene.approvedVoKey, { expiresIn: 3600 }).catch(() => null)
   }
   return {
     id: scene.id,
@@ -90,6 +101,10 @@ async function sceneDto(scene: typeof productScenes.$inferSelect) {
     clipUrl,
     voUrl,
     updatedAt: scene.updatedAt.toISOString(),
+    approvedAt: scene.approvedAt?.toISOString() ?? null,
+    approvedClipUrl,
+    approvedVoUrl,
+    isLatestApproved: Boolean(scene.clipKey) && scene.clipKey === scene.approvedClipKey,
     hasClip: Boolean(scene.clipKey),
     hasVo: Boolean(scene.voKey),
     failReason: scene.failReason,
@@ -202,7 +217,7 @@ export async function productRoutes(app: FastifyInstance) {
     if (isStorageConfigured) {
       await Promise.all(
         scenes.flatMap((s) =>
-          [s.clipKey, s.voKey]
+          [s.clipKey, s.voKey, s.approvedClipKey, s.approvedVoKey]
             .filter((k): k is string => Boolean(k))
             .map((k) => deleteObject(k).catch(() => undefined)),
         ),
@@ -251,11 +266,11 @@ export async function productRoutes(app: FastifyInstance) {
 
     const staleKeys: string[] = []
     if (promptChanged && current.clipKey) {
-      staleKeys.push(current.clipKey)
+      if (current.clipKey !== current.approvedClipKey) staleKeys.push(current.clipKey)
       Object.assign(patch, { clipKey: null, clipUrl: null, frameUrl: null, clipStatus: 'idle' })
     }
     if (voChanged && current.voKey) {
-      staleKeys.push(current.voKey)
+      if (current.voKey !== current.approvedVoKey) staleKeys.push(current.voKey)
       Object.assign(patch, { voKey: null, voStatus: 'idle' })
     }
     if (isStorageConfigured && staleKeys.length) {
@@ -276,7 +291,7 @@ export async function productRoutes(app: FastifyInstance) {
     if (!scene) return reply.code(404).send({ error: 'Сцена не найдена' })
     if (isStorageConfigured) {
       await Promise.all(
-        [scene.clipKey, scene.voKey]
+        [scene.clipKey, scene.voKey, scene.approvedClipKey, scene.approvedVoKey]
           .filter((k): k is string => Boolean(k))
           .map((k) => deleteObject(k).catch(() => undefined)),
       )
@@ -312,10 +327,43 @@ export async function productRoutes(app: FastifyInstance) {
     const patch = body.target === 'clip' ? { clipStatus: 'queued' } : { voStatus: 'queued' }
     await db
       .update(productScenes)
-      .set({ ...patch, failReason: null, updatedAt: new Date() })
+      .set({ ...patch, approvedAt: null, failReason: null, updatedAt: new Date() })
       .where(eq(productScenes.id, id))
     await sceneQueue.add('scene', { sceneId: id, target: body.target })
     return { ok: true }
+  })
+
+  app.post('/admin/scenes/:id/approve', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const body = approveSchema.parse(req.body)
+    const scene = await db.query.productScenes.findFirst({ where: eq(productScenes.id, id) })
+    if (!scene) return reply.code(404).send({ error: 'Сцена не найдена' })
+    if (body.approved && !scene.clipKey) {
+      return reply.code(409).send({ error: 'Сначала прогоните сцену — утверждать нечего' })
+    }
+    if (body.approved && scene.voiceoverText?.trim() && !scene.voKey) {
+      return reply.code(409).send({ error: 'Нет озвучки — сгенерируйте её перед утверждением' })
+    }
+    if (!body.approved) {
+      const orphans = [scene.approvedClipKey, scene.approvedVoKey].filter(
+        (k): k is string => Boolean(k) && k !== scene.clipKey && k !== scene.voKey,
+      )
+      if (isStorageConfigured && orphans.length) {
+        await Promise.all(orphans.map((k) => deleteObject(k).catch(() => undefined)))
+      }
+    }
+
+    const [updated] = await db
+      .update(productScenes)
+      .set({
+        approvedAt: body.approved ? new Date() : null,
+        approvedClipKey: body.approved ? scene.clipKey : null,
+        approvedVoKey: body.approved ? scene.voKey : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(productScenes.id, id))
+      .returning()
+    return { scene: await sceneDto(updated) }
   })
 
   app.get('/admin/settings/sample-child', async () => {
@@ -369,7 +417,8 @@ async function catalogDto(product: typeof products.$inferSelect) {
     .from(productScenes)
     .where(eq(productScenes.productId, product.id))
     .orderBy(asc(productScenes.position))
-  const previewSource = product.previewKey ?? scenes.find((s) => s.clipKey)?.clipKey ?? null
+  const previewSource =
+    product.previewKey ?? scenes.find((s) => s.approvedClipKey)?.approvedClipKey ?? null
   let previewUrl: string | null = null
   if (isStorageConfigured && previewSource) {
     previewUrl = await presignGet(previewSource, { expiresIn: 3600 }).catch(() => null)
