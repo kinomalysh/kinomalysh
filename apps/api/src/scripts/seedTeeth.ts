@@ -150,7 +150,7 @@ async function main() {
           slug: SLUG,
           title: 'Тёма и волшебная щётка',
           tagline: 'Пилотный товарный ролик · чистка зубов',
-          status: 'active',
+          status: 'draft',
         })
         .returning()
     )[0]

@@ -48,16 +48,26 @@ kinomalysh.ru {
 
 	encode zstd gzip
 
-	root * /srv/kinomalysh/web
+	handle_path /api/* {
+		reverse_proxy localhost:3001
+	}
 
-	@immutable path /assets/*
-	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	handle /uploads/* {
+		reverse_proxy localhost:3001
+	}
 
-	@html path *.html /
-	header @html Cache-Control "public, max-age=0, must-revalidate"
+	handle {
+		root * /srv/kinomalysh/web
 
-	try_files {path} {path}/index.html /index.html
-	file_server
+		@immutable path /assets/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		@html path *.html /
+		header @html Cache-Control "public, max-age=0, must-revalidate"
+
+		try_files {path} {path}/index.html /index.html
+		file_server
+	}
 }
 
 admin.kinomalysh.ru {
