@@ -3,7 +3,7 @@ import { createWriteStream } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { productScenes, products, settings } from '@kidsstory/db'
 import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
@@ -265,6 +265,11 @@ export async function productRoutes(app: FastifyInstance) {
       body.voiceoverText !== undefined && body.voiceoverText !== current.voiceoverText
 
     const staleKeys: string[] = []
+    const dropsApproval = (promptChanged || voChanged) && Boolean(current.approvedAt)
+    if (promptChanged || voChanged) {
+      patch.failReason = null
+      patch.approvedAt = null
+    }
     if (promptChanged && current.clipKey) {
       if (current.clipKey !== current.approvedClipKey) staleKeys.push(current.clipKey)
       Object.assign(patch, { clipKey: null, clipUrl: null, frameUrl: null, clipStatus: 'idle' })
@@ -282,7 +287,18 @@ export async function productRoutes(app: FastifyInstance) {
       .set(patch)
       .where(eq(productScenes.id, id))
       .returning()
-    return { scene: await sceneDto(updated), invalidated: staleKeys.length > 0 }
+
+    let unpublished = false
+    if (dropsApproval) {
+      const [product] = await db
+        .update(products)
+        .set({ status: 'draft', updatedAt: new Date() })
+        .where(and(eq(products.id, current.productId), eq(products.status, 'active')))
+        .returning()
+      unpublished = Boolean(product)
+    }
+
+    return { scene: await sceneDto(updated), invalidated: staleKeys.length > 0, unpublished }
   })
 
   app.delete('/admin/scenes/:id', async (req, reply) => {

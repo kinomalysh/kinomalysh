@@ -169,6 +169,9 @@ async function callFalQueue(model: string, input: Record<string, unknown>): Prom
 
   const result = await fetch(responseUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
   const raw = await result.text()
+  if (raw.includes('content_policy_violation')) {
+    throw new ContentPolicyError(`Контент-фильтр модели отклонил промпт (${requestId})`)
+  }
   if (!result.ok) {
     throw new FalError(
       `fal ${model} result ${result.status} (${requestId}): ${raw.slice(0, 400)}`,

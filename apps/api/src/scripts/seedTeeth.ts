@@ -23,7 +23,7 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Знакомство',
     prompt:
-      'Cozy little bathroom in the evening, warm night lamp glow, fogged mirror, a cup with a toothbrush on the sink, stars lighting up in the window behind, no people in frame, gentle slow push-in',
+      'Cozy corner of a home in the evening: a small washbasin with a cup and a toothbrush, a fogged mirror above it, warm night lamp glow on pale tiles, stars lighting up in the window behind, no people in frame, gentle slow push-in',
     voiceoverText:
       'Наступил вечер. Звёздочки зажглись за окном, и в маленькой уютной ванной началось самое нелюбимое время Тёмы — чистить зубы.',
   },
@@ -79,7 +79,7 @@ const SCENES: SeedScene[] = [
     kind: 'library',
     title: 'Магия',
     prompt:
-      'Golden sparks swirl in a warm vortex through the little bathroom, glowing light washes over tiles and mirror, no people in frame, smooth circular camera movement',
+      'Golden sparks swirl in a warm vortex through a small tiled corner of a home, glowing light washes over the pale tiles and the mirror above the washbasin, no people in frame, smooth circular camera movement',
     voiceoverText: '',
   },
   {
@@ -167,6 +167,7 @@ async function main() {
       title: scene.title,
       prompt: scene.prompt,
       voiceoverText: scene.voiceoverText || null,
+      failReason: null,
       updatedAt: new Date(),
     }
     const current = byPosition.get(position)
