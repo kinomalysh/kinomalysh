@@ -48,7 +48,7 @@ export function OrderDetailPage() {
   }, [story])
 
   if (loading) return <Spinner />
-  if (error || !story) return <p className="text-berry">{error ?? 'Заказ не найден'}</p>
+  if (!story) return <p className="text-berry">{error ?? 'Заказ не найден'}</p>
 
   const savePrompts = async () => {
     setSaving(true)

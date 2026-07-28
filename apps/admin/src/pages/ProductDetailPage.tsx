@@ -598,7 +598,7 @@ export function ProductDetailPage() {
   }
 
   if (loading) return <Spinner />
-  if (error || !data) return <p className="text-berry">{error ?? 'Продукт не найден'}</p>
+  if (!data) return <p className="text-berry">{error ?? 'Продукт не найден'}</p>
 
   return (
     <div className="space-y-6">
