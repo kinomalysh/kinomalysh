@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { api } from '@/shared/api'
 import { useAsync } from '@/shared/useAsync'
-import { Card, Spinner, STATUS_LABELS } from '@/shared/ui'
+import { Button, Card, ErrorText, Spinner, STATUS_LABELS } from '@/shared/ui'
 
 interface Dashboard {
   users: number
@@ -9,6 +10,55 @@ interface Dashboard {
   revenueMinor: number
   reels: number
   byStatus: Record<string, number>
+}
+
+interface FalBalance {
+  username: string | null
+  balance: number | null
+  currency: string
+}
+
+function FalBalanceCard() {
+  const [data, setData] = useState<FalBalance | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const check = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      setData(await api<FalBalance>('/admin/fal-balance'))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const low = data?.balance != null && data.balance < 10
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-ink-3">Баланс fal.ai</p>
+          {data?.balance != null ? (
+            <p className={`mt-1 text-3xl font-semibold ${low ? 'text-berry' : 'text-leaf'}`}>
+              {data.balance.toLocaleString('en-US', { style: 'currency', currency: data.currency })}
+            </p>
+          ) : (
+            <p className="mt-1 text-2xl font-semibold text-ink-3">—</p>
+          )}
+          {data?.username && <p className="text-xs text-ink-3">аккаунт {data.username}</p>}
+        </div>
+        <Button variant="ghost" onClick={check} loading={loading}>
+          Проверить
+        </Button>
+      </div>
+      {low && <p className="text-xs text-berry">Баланс на исходе — пополните fal.ai</p>}
+      <ErrorText>{error}</ErrorText>
+    </Card>
+  )
 }
 
 export function DashboardPage() {
@@ -36,6 +86,11 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <div className="max-w-md">
+        <FalBalanceCard />
+      </div>
+
       <Card>
         <h2 className="mb-4 text-lg font-semibold">Заказы по статусам</h2>
         <div className="flex flex-wrap gap-3">

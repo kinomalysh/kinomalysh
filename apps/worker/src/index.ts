@@ -1,18 +1,28 @@
 import { Worker } from 'bullmq'
 import { Redis } from 'ioredis'
 import { eq, sql } from 'drizzle-orm'
-import { adReels, createDb, stories, tokenLedger, users } from '@kidsstory/db'
+import { adReels, createDb, productScenes, settings, stories, tokenLedger, users } from '@kidsstory/db'
 import {
+  buildProductScenePrompt,
   getPlotDef,
   QUEUE_ADREEL,
   QUEUE_CASTING,
   QUEUE_RENDER,
+  QUEUE_SCENE,
   REEL_NEGATIVE_PROMPT,
 } from '@kidsstory/shared'
-import type { AdReelJobData, CastingJobData, RenderJobData } from '@kidsstory/shared'
+import type { AdReelJobData, CastingJobData, RenderJobData, SceneAssetJobData } from '@kidsstory/shared'
 import { isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { env } from './env.js'
-import { animateScene, buildReelFirstFrame, generateAvatars, generateScene, photoDataUri } from './fal.js'
+import {
+  animateFromText,
+  animateScene,
+  buildReelFirstFrame,
+  generateAvatars,
+  generateScene,
+  photoDataUri,
+} from './fal.js'
+import { generateVoiceover } from './elevenlabs.js'
 
 const db = createDb(env.DATABASE_URL)
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null })
@@ -147,6 +157,82 @@ adReelWorker.on('failed', async (job, error) => {
   }
 })
 
+async function setSceneStatus(sceneId: string, patch: Partial<typeof productScenes.$inferInsert>) {
+  await db
+    .update(productScenes)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(productScenes.id, sceneId))
+}
+
+const sceneWorker = new Worker<SceneAssetJobData>(
+  QUEUE_SCENE,
+  async (job) => {
+    const scene = await db.query.productScenes.findFirst({
+      where: eq(productScenes.id, job.data.sceneId),
+    })
+    if (!scene) throw new Error(`scene ${job.data.sceneId} not found`)
+
+    if (job.data.target === 'vo') {
+      if (!scene.voiceoverText?.trim()) throw new Error('нет текста озвучки')
+      await setSceneStatus(scene.id, { voStatus: 'generating', failReason: null })
+      const audio = await generateVoiceover(scene.voiceoverText)
+      let voKey: string | null = null
+      if (isStorageConfigured) {
+        voKey = `products/${scene.productId}/${scene.id}-vo.mp3`
+        await uploadObject(voKey, audio, 'audio/mpeg')
+      }
+      await setSceneStatus(scene.id, { voStatus: 'ready', voKey })
+      console.log(`[scene] ${scene.id}: vo ready`)
+      return
+    }
+
+    if (!scene.prompt.trim()) throw new Error('нет промпта сцены')
+    const fullPrompt = buildProductScenePrompt(scene.prompt)
+    await setSceneStatus(scene.id, { clipStatus: scene.kind === 'hero' ? 'framing' : 'animating', failReason: null })
+
+    let videoUrl: string
+    if (scene.kind === 'hero') {
+      const sample = await db.query.settings.findFirst({
+        where: eq(settings.key, 'sample_child_photo'),
+      })
+      if (!sample?.value) throw new Error('загрузите тестовое фото ребёнка в настройках')
+      const frame = await buildReelFirstFrame([sample.value], fullPrompt, 'landscape_16_9')
+      await setSceneStatus(scene.id, { clipStatus: 'animating' })
+      videoUrl = await animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {
+        aspectRatio: '16:9',
+        negativePrompt: REEL_NEGATIVE_PROMPT,
+      })
+    } else {
+      videoUrl = await animateFromText(fullPrompt, {
+        aspectRatio: '16:9',
+        negativePrompt: REEL_NEGATIVE_PROMPT,
+      })
+    }
+
+    let clipKey: string | null = null
+    if (isStorageConfigured) {
+      const res = await fetch(videoUrl)
+      if (!res.ok) throw new Error(`download ${res.status}`)
+      clipKey = `products/${scene.productId}/${scene.id}.mp4`
+      await uploadObject(clipKey, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
+    }
+    await setSceneStatus(scene.id, { clipStatus: 'ready', clipUrl: videoUrl, clipKey })
+    console.log(`[scene] ${scene.id}: clip ready`)
+  },
+  { connection, concurrency: 2 },
+)
+
+sceneWorker.on('failed', async (job, error) => {
+  console.error(`[scene] failed: ${error.message}`)
+  if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+    const field = job.data.target === 'vo' ? { voStatus: 'failed' } : { clipStatus: 'failed' }
+    await db
+      .update(productScenes)
+      .set({ ...field, failReason: error.message, updatedAt: new Date() })
+      .where(eq(productScenes.id, job.data.sceneId))
+  }
+})
+
 castingWorker.on('failed', async (job, error) => {
   console.error(`[casting] failed: ${error.message}`)
   if (job?.data.storyId && job.attemptsMade >= (job.opts.attempts ?? 1)) {
@@ -162,11 +248,16 @@ renderWorker.on('failed', async (job, error) => {
   }
 })
 
-console.log('[worker] listening for casting, render and adreel jobs')
+console.log('[worker] listening for casting, render, adreel and scene jobs')
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
-    await Promise.all([castingWorker.close(), renderWorker.close(), adReelWorker.close()])
+    await Promise.all([
+      castingWorker.close(),
+      renderWorker.close(),
+      adReelWorker.close(),
+      sceneWorker.close(),
+    ])
     process.exit(0)
   })
 }

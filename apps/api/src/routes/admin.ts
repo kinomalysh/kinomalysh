@@ -91,6 +91,35 @@ async function protectedAdminRoutes(app: FastifyInstance) {
     }
   })
 
+  app.get('/admin/fal-balance', async (_req, reply) => {
+    const key = env.FAL_ADMIN_KEY || env.FAL_KEY
+    if (!key) return reply.code(503).send({ error: 'FAL-ключ не задан на сервере' })
+    try {
+      const res = await fetch('https://api.fal.ai/v1/account/billing?expand=credits', {
+        headers: { Authorization: `Key ${key}` },
+      })
+      const data = (await res.json().catch(() => ({}))) as {
+        username?: string
+        credits?: { current_balance?: number; currency?: string }
+        error?: { message?: string }
+      }
+      if (!res.ok) {
+        const msg = data.error?.message ?? `fal.ai ответил ${res.status}`
+        const permission = msg.toLowerCase().includes('not permitted')
+        return reply
+          .code(502)
+          .send({ error: permission ? 'Нужен admin-ключ fal.ai (FAL_ADMIN_KEY)' : msg })
+      }
+      return {
+        username: data.username ?? null,
+        balance: data.credits?.current_balance ?? null,
+        currency: data.credits?.currency ?? 'USD',
+      }
+    } catch {
+      return reply.code(502).send({ error: 'Не удалось получить баланс fal.ai' })
+    }
+  })
+
   app.get('/admin/stories', async (req) => {
     const { q, status, page } = listQuerySchema.parse(req.query)
     const filters = [

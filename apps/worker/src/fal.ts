@@ -74,7 +74,11 @@ interface FalEditResponse {
   images?: Array<{ url?: string }>
 }
 
-export async function buildReelFirstFrame(photoPaths: string[], fullPrompt: string): Promise<string> {
+export async function buildReelFirstFrame(
+  photoPaths: string[],
+  fullPrompt: string,
+  imageSize: 'portrait_16_9' | 'landscape_16_9' = 'portrait_16_9',
+): Promise<string> {
   const imageUris = await Promise.all(photoPaths.map(photoToDataUri))
   const res = await fetch(`https://fal.run/${IMAGE_EDIT_MODEL}`, {
     method: 'POST',
@@ -82,7 +86,7 @@ export async function buildReelFirstFrame(photoPaths: string[], fullPrompt: stri
     body: JSON.stringify({
       prompt: fullPrompt,
       image_urls: imageUris,
-      image_size: 'portrait_16_9',
+      image_size: imageSize,
       num_images: 1,
     }),
   })
@@ -152,5 +156,24 @@ export async function animateScene(
   const body = (await callFalQueue(VIDEO_MODEL.model, input)) as FalVideoResponse
   const url = body.video?.url
   if (!url) throw new FalError(`fal ${VIDEO_MODEL.model} returned no video`, 502)
+  return url
+}
+
+const TEXT_VIDEO_MODEL = 'fal-ai/pixverse/v5.5/text-to-video'
+
+export async function animateFromText(
+  prompt: string,
+  options: { aspectRatio?: '16:9' | '9:16'; negativePrompt?: string } = {},
+): Promise<string> {
+  const input: Record<string, unknown> = {
+    prompt,
+    resolution: VIDEO_MODEL.resolution,
+    duration: VIDEO_MODEL.duration,
+    aspect_ratio: options.aspectRatio ?? '16:9',
+  }
+  if (options.negativePrompt) input.negative_prompt = options.negativePrompt
+  const body = (await callFalQueue(TEXT_VIDEO_MODEL, input)) as FalVideoResponse
+  const url = body.video?.url
+  if (!url) throw new FalError(`fal ${TEXT_VIDEO_MODEL} returned no video`, 502)
   return url
 }

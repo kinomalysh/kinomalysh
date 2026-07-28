@@ -6,6 +6,7 @@ import { cn } from '@/shared/ui'
 const NAV = [
   { to: '/', label: 'Дашборд', end: true },
   { to: '/orders', label: 'Заказы', end: false },
+  { to: '/products', label: 'Продукты', end: false },
   { to: '/users', label: 'Пользователи', end: false },
   { to: '/reels', label: 'Генерация роликов', end: false },
 ]

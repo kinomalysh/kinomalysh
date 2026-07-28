@@ -10,6 +10,8 @@ import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { UserDetailPage } from '@/pages/UserDetailPage'
 import { ReelsPage } from '@/pages/ReelsPage'
+import { ProductsPage } from '@/pages/ProductsPage'
+import { ProductDetailPage } from '@/pages/ProductDetailPage'
 
 export function App() {
   const status = useAuth((s) => s.status)
@@ -40,6 +42,8 @@ export function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:id" element={<UserDetailPage />} />
             <Route path="/reels" element={<ReelsPage />} />

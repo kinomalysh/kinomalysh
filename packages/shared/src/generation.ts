@@ -33,3 +33,16 @@ export function buildReelPrompt(scenePrompt: string): string {
   const scene = scenePrompt.trim().replace(/\.$/, '')
   return `${scene}, ${REEL_STYLE}`
 }
+
+export type SceneKind = 'hero' | 'library' | 'title'
+
+export const PRODUCT_STYLE =
+  'Disney Pixar 3D animation style, oversized expressive eyes, soft rounded features, warm cinematic lighting, deep indigo night palette with golden light, storybook composition, horizontal 16:9 composition, single continuous shot, smooth gentle camera movement, no text'
+
+export function buildProductScenePrompt(prompt: string): string {
+  const scene = prompt.trim().replace(/\.$/, '')
+  return `${scene}, ${PRODUCT_STYLE}`
+}
+
+export const ELEVEN_VOICE_LUNYA = 'rSfuQoQ3FY8SVKeraMAp'
+export const ELEVEN_MODEL = 'eleven_v3'

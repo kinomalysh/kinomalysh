@@ -118,6 +118,43 @@ export const adminRefreshTokens = pgTable('admin_refresh_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+export const products = pgTable('products', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: varchar('slug', { length: 60 }).notNull().unique(),
+  title: varchar('title', { length: 120 }).notNull(),
+  tagline: varchar('tagline', { length: 200 }),
+  status: varchar('status', { length: 16 }).notNull().default('draft'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const productScenes = pgTable('product_scenes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  kind: varchar('kind', { length: 12 }).notNull(),
+  title: varchar('title', { length: 120 }),
+  prompt: text('prompt').notNull().default(''),
+  voiceoverText: text('voiceover_text'),
+  motionPrompt: text('motion_prompt'),
+  clipKey: text('clip_key'),
+  clipUrl: text('clip_url'),
+  clipStatus: varchar('clip_status', { length: 12 }).notNull().default('idle'),
+  voKey: text('vo_key'),
+  voStatus: varchar('vo_status', { length: 12 }).notNull().default('idle'),
+  failReason: text('fail_reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const settings = pgTable('settings', {
+  key: varchar('key', { length: 60 }).primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const adReels = pgTable('ad_reels', {
   id: uuid('id').defaultRandom().primaryKey(),
   adminId: uuid('admin_id')

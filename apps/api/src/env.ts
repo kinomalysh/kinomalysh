@@ -9,6 +9,8 @@ const envSchema = z.object({
   ADMIN_URL: z.string().default('http://localhost:5299'),
   PUBLIC_API_URL: z.string().default('http://localhost:3001'),
   UPLOADS_DIR: z.string().default('./uploads'),
+  FAL_KEY: z.string().default(''),
+  FAL_ADMIN_KEY: z.string().default(''),
   CASHERA_API_URL: z.string().default('https://api.cashera.cash/api/v1'),
   CASHERA_API_KEY: z.string().default(''),
   CASHERA_SECRET: z.string().default(''),
