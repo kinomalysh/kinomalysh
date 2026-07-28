@@ -37,7 +37,7 @@ export function buildReelPrompt(scenePrompt: string): string {
 export type SceneKind = 'hero' | 'library' | 'title'
 
 export const PRODUCT_STYLE =
-  'soft stylized 3D cartoon animation, oversized expressive eyes, soft rounded features, warm cinematic lighting, deep indigo night palette with golden light, storybook composition, horizontal 16:9 composition, single continuous shot, smooth gentle camera movement, no text'
+  'soft stylized 3D cartoon animation, glossy expressive eyes, soft rounded features, warm cinematic lighting, deep indigo night palette with golden accents, storybook mood, no text'
 
 export function buildProductScenePrompt(prompt: string): string {
   const scene = prompt.trim().replace(/\.$/, '')
