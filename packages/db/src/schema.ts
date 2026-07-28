@@ -38,6 +38,8 @@ export const stories = pgTable('stories', {
   scenePrompts: jsonb('scene_prompts').$type<string[]>().notNull().default([]),
   scenes: jsonb('scenes').$type<string[]>().notNull().default([]),
   resultUrl: text('result_url'),
+  resultKey: text('result_key'),
+  productId: uuid('product_id'),
   failReason: text('fail_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -123,6 +125,9 @@ export const products = pgTable('products', {
   slug: varchar('slug', { length: 60 }).notNull().unique(),
   title: varchar('title', { length: 120 }).notNull(),
   tagline: varchar('tagline', { length: 200 }),
+  description: text('description'),
+  priceTokens: integer('price_tokens').notNull().default(0),
+  previewKey: text('preview_key'),
   status: varchar('status', { length: 16 }).notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -139,11 +144,29 @@ export const productScenes = pgTable('product_scenes', {
   prompt: text('prompt').notNull().default(''),
   voiceoverText: text('voiceover_text'),
   motionPrompt: text('motion_prompt'),
+  frameUrl: text('frame_url'),
   clipKey: text('clip_key'),
   clipUrl: text('clip_url'),
   clipStatus: varchar('clip_status', { length: 12 }).notNull().default('idle'),
   voKey: text('vo_key'),
   voStatus: varchar('vo_status', { length: 12 }).notNull().default('idle'),
+  failReason: text('fail_reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const storyScenes = pgTable('story_scenes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  storyId: uuid('story_id')
+    .notNull()
+    .references(() => stories.id, { onDelete: 'cascade' }),
+  sceneId: uuid('scene_id')
+    .notNull()
+    .references(() => productScenes.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  status: varchar('status', { length: 16 }).notNull().default('pending'),
+  clipKey: text('clip_key'),
+  attempts: integer('attempts').notNull().default(0),
   failReason: text('fail_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

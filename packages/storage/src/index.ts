@@ -79,6 +79,13 @@ export async function presignGet(key: string, options: PresignOptions = {}): Pro
   return getSignedUrl(getClient(cfg), command, { expiresIn: options.expiresIn ?? 3600 })
 }
 
+export async function getObject(key: string): Promise<Uint8Array> {
+  const cfg = requireConfig()
+  const res = await getClient(cfg).send(new GetObjectCommand({ Bucket: cfg.bucket, Key: key }))
+  if (!res.Body) throw new Error(`объект ${key} пуст`)
+  return new Uint8Array(await res.Body.transformToByteArray())
+}
+
 export async function deleteObject(key: string): Promise<void> {
   const cfg = requireConfig()
   await getClient(cfg).send(new DeleteObjectCommand({ Bucket: cfg.bucket, Key: key }))

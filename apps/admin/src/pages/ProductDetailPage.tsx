@@ -17,9 +17,11 @@ interface Scene {
   motionPrompt: string | null
   clipStatus: string
   voStatus: string
+  frameUrl: string | null
   clipUrl: string | null
   voUrl: string | null
   failReason: string | null
+  updatedAt: string
 }
 
 interface Product {
@@ -27,7 +29,14 @@ interface Product {
   slug: string
   title: string
   tagline: string | null
+  description: string | null
+  priceTokens: number
   status: string
+}
+
+interface Readiness {
+  canPublish: boolean
+  blockers: string[]
 }
 
 const KIND_LABEL: Record<SceneKind, string> = { hero: 'Герой', library: 'Библиотека', title: 'Титр' }
@@ -46,6 +55,93 @@ const STAGE_LABEL: Record<string, string> = {
   ready: 'готово',
   failed: 'ошибка',
   idle: '',
+}
+const STAGE_HINT: Record<string, string> = {
+  queued: 'Ждём свободный слот воркера',
+  framing: 'nano-banana рисует первый кадр по фото ребёнка',
+  animating: 'PixVerse оживляет кадр — это самый долгий шаг, 2–5 минут',
+  generating: 'ElevenLabs синтезирует речь',
+}
+
+function clipStages(kind: SceneKind): Array<{ key: string; label: string }> {
+  const stages = [{ key: 'queued', label: 'Очередь' }]
+  if (kind === 'hero') stages.push({ key: 'framing', label: 'Кадр' })
+  stages.push({ key: 'animating', label: kind === 'hero' ? 'Оживление' : 'Генерация' })
+  stages.push({ key: 'ready', label: 'Готово' })
+  return stages
+}
+
+const VO_STAGES = [
+  { key: 'queued', label: 'Очередь' },
+  { key: 'generating', label: 'Синтез' },
+  { key: 'ready', label: 'Готово' },
+]
+
+function useElapsed(startIso: string): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  return Math.max(0, Math.floor((now - new Date(startIso).getTime()) / 1000))
+}
+
+function fmtElapsed(sec: number): string {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+}
+
+function StageBar({
+  stages,
+  status,
+  since,
+  frameUrl,
+}: {
+  stages: Array<{ key: string; label: string }>
+  status: string
+  since: string
+  frameUrl?: string | null
+}) {
+  const currentIdx = stages.findIndex((s) => s.key === status)
+  const elapsed = useElapsed(since)
+
+  return (
+    <div className="mt-3 rounded-xl border border-gold/25 bg-surface-2/50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 text-sm font-semibold text-gold">
+          <Spinner />
+          {STAGE_HINT[status] ?? 'Работаем…'}
+        </span>
+        <span className="tabular-nums text-xs text-ink-3">на этапе {fmtElapsed(elapsed)}</span>
+      </div>
+
+      <div className="mt-3 flex items-end gap-2">
+        {stages.map((s, i) => {
+          const done = currentIdx > i
+          const active = currentIdx === i
+          return (
+            <div key={s.key} className="flex flex-1 flex-col items-center gap-1.5">
+              <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-line">
+                {done && <span className="absolute inset-0 rounded-full bg-leaf" />}
+                {active && (
+                  <span className="absolute inset-y-0 w-1/2 rounded-full bg-gold [animation:km-progress_1.3s_ease-in-out_infinite]" />
+                )}
+              </span>
+              <span className={cn('text-[11px]', active ? 'text-gold' : done ? 'text-leaf' : 'text-ink-3')}>
+                {s.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {frameUrl && (
+        <div className="relative mt-3 inline-block overflow-hidden rounded-lg">
+          <img src={frameUrl} alt="Кадр сцены" className="h-40 rounded-lg" />
+          <span className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent [animation:km-shimmer_1.8s_linear_infinite]" />
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SampleChild() {
@@ -241,6 +337,16 @@ function SceneCard({
         {voBusy && <span className="text-xs text-gold">озвучка: {STAGE_LABEL[scene.voStatus]}…</span>}
       </div>
 
+      {clipBusy && (
+        <StageBar
+          stages={clipStages(scene.kind)}
+          status={scene.clipStatus}
+          since={scene.updatedAt}
+          frameUrl={scene.clipStatus === 'animating' ? scene.frameUrl : null}
+        />
+      )}
+      {voBusy && <StageBar stages={VO_STAGES} status={scene.voStatus} since={scene.updatedAt} />}
+
       {(scene.clipUrl || scene.voUrl) && (
         <div className="flex flex-wrap items-start gap-4 pt-1">
           {scene.clipUrl && <video src={scene.clipUrl} controls className="max-h-52 rounded-lg" />}
@@ -252,6 +358,129 @@ function SceneCard({
           )}
         </div>
       )}
+    </Card>
+  )
+}
+
+
+function ProductSettings({ product, onChanged }: { product: Product; onChanged: () => void }) {
+  const { data: readiness, reload: reloadReadiness } = useAsync(
+    () => api<Readiness>(`/admin/products/${product.id}/readiness`),
+    [product.id],
+  )
+  const [description, setDescription] = useState(product.description ?? '')
+  const [price, setPrice] = useState(String(product.priceTokens))
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [note, setNote] = useState('')
+
+  const dirty = description !== (product.description ?? '') || price !== String(product.priceTokens)
+
+  const patch = async (body: Record<string, unknown>, okNote: string) => {
+    setBusy(true)
+    setErr('')
+    setNote('')
+    try {
+      await api(`/admin/products/${product.id}`, { method: 'PATCH', body })
+      setNote(okNote)
+      onChanged()
+      reloadReadiness()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const buildMasters = async () => {
+    setBusy(true)
+    setErr('')
+    try {
+      const res = await api<{ queued: number }>(`/admin/products/${product.id}/masters`, {
+        method: 'POST',
+      })
+      setNote(res.queued ? `В очередь поставлено задач: ${res.queued}` : 'Все мастера уже готовы')
+      onChanged()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Витрина</h2>
+        <span
+          className={cn(
+            'rounded-full px-3 py-1 text-xs',
+            product.status === 'active' ? 'bg-leaf/15 text-leaf' : 'bg-surface-2 text-ink-3',
+          )}
+        >
+          {product.status === 'active' ? 'опубликован' : product.status}
+        </span>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-[1fr_180px]">
+        <Field label="Описание для клиента">
+          <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <Field label="Цена, токенов">
+          <Input
+            type="number"
+            min={0}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </Field>
+      </div>
+
+      {readiness && !readiness.canPublish && (
+        <div className="rounded-xl border border-berry/30 bg-berry/5 p-3 text-sm">
+          <p className="font-medium text-berry">Публиковать нельзя, пока не закрыто:</p>
+          <ul className="mt-1 list-disc pl-5 text-ink-2">
+            {readiness.blockers.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
+        {dirty && (
+          <Button
+            loading={busy}
+            onClick={() =>
+              patch(
+                { description: description || null, priceTokens: Number(price) || 0 },
+                'Сохранено',
+              )
+            }
+          >
+            Сохранить
+          </Button>
+        )}
+        <Button variant="ghost" loading={busy} onClick={buildMasters}>
+          Сгенерировать мастера
+        </Button>
+        {product.status === 'active' ? (
+          <Button variant="ghost" loading={busy} onClick={() => patch({ status: 'draft' }, 'Снят с витрины')}>
+            Снять с витрины
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            loading={busy}
+            disabled={!readiness?.canPublish}
+            onClick={() => patch({ status: 'active' }, 'Опубликован')}
+          >
+            Опубликовать
+          </Button>
+        )}
+        {note && <span className="text-xs text-leaf">{note}</span>}
+      </div>
+      <ErrorText>{err}</ErrorText>
     </Card>
   )
 }
@@ -310,6 +539,8 @@ export function ProductDetailPage() {
         <h1 className="font-display text-3xl">{data.product.title}</h1>
         {data.product.tagline && <p className="text-sm text-ink-3">{data.product.tagline}</p>}
       </div>
+
+      <ProductSettings product={data.product} onChanged={reload} />
 
       <SampleChild />
 

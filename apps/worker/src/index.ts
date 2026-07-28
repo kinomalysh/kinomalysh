@@ -1,6 +1,6 @@
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 import { Redis } from 'ioredis'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { adReels, createDb, productScenes, settings, stories, tokenLedger, users } from '@kidsstory/db'
 import {
   buildProductScenePrompt,
@@ -8,20 +8,29 @@ import {
   QUEUE_ADREEL,
   QUEUE_CASTING,
   QUEUE_RENDER,
+  QUEUE_PRODUCT_ORDER,
   QUEUE_SCENE,
   REEL_NEGATIVE_PROMPT,
 } from '@kidsstory/shared'
-import type { AdReelJobData, CastingJobData, RenderJobData, SceneAssetJobData } from '@kidsstory/shared'
+import type {
+  AdReelJobData,
+  CastingJobData,
+  ProductOrderJobData,
+  RenderJobData,
+  SceneAssetJobData,
+} from '@kidsstory/shared'
 import { isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { env } from './env.js'
 import {
   animateFromText,
   animateScene,
   buildReelFirstFrame,
+  ContentPolicyError,
   generateAvatars,
   generateScene,
   photoDataUri,
 } from './fal.js'
+import { assembleProductOrder, OrderFailedError } from './productOrder.js'
 import { generateVoiceover } from './elevenlabs.js'
 
 const db = createDb(env.DATABASE_URL)
@@ -125,7 +134,6 @@ const adReelWorker = new Worker<AdReelJobData>(
     await setReelStatus(reel.id, { status: 'animating' })
     const motionPrompt = reel.motionPrompt?.trim() || reel.fullPrompt
     const videoUrl = await animateScene(sceneImageUrl, motionPrompt, {
-      aspectRatio: '9:16',
       negativePrompt: REEL_NEGATIVE_PROMPT,
     })
 
@@ -188,7 +196,11 @@ const sceneWorker = new Worker<SceneAssetJobData>(
 
     if (!scene.prompt.trim()) throw new Error('нет промпта сцены')
     const fullPrompt = buildProductScenePrompt(scene.prompt)
-    await setSceneStatus(scene.id, { clipStatus: scene.kind === 'hero' ? 'framing' : 'animating', failReason: null })
+    await setSceneStatus(scene.id, {
+      clipStatus: scene.kind === 'hero' ? 'framing' : 'animating',
+      frameUrl: null,
+      failReason: null,
+    })
 
     let videoUrl: string
     if (scene.kind === 'hero') {
@@ -196,13 +208,15 @@ const sceneWorker = new Worker<SceneAssetJobData>(
         where: eq(settings.key, 'sample_child_photo'),
       })
       if (!sample?.value) throw new Error('загрузите тестовое фото ребёнка в настройках')
+      console.log(`[scene] ${scene.id}: building frame`)
       const frame = await buildReelFirstFrame([sample.value], fullPrompt, 'landscape_16_9')
-      await setSceneStatus(scene.id, { clipStatus: 'animating' })
+      await setSceneStatus(scene.id, { clipStatus: 'animating', frameUrl: frame })
+      console.log(`[scene] ${scene.id}: animating`)
       videoUrl = await animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {
-        aspectRatio: '16:9',
         negativePrompt: REEL_NEGATIVE_PROMPT,
       })
     } else {
+      console.log(`[scene] ${scene.id}: text-to-video`)
       videoUrl = await animateFromText(fullPrompt, {
         aspectRatio: '16:9',
         negativePrompt: REEL_NEGATIVE_PROMPT,
@@ -233,6 +247,40 @@ sceneWorker.on('failed', async (job, error) => {
   }
 })
 
+const productOrderWorker = new Worker<ProductOrderJobData>(
+  QUEUE_PRODUCT_ORDER,
+  async (job) => {
+    console.log(`[order] ${job.data.storyId}: сборка запущена`)
+    try {
+      await assembleProductOrder(db, job.data.storyId)
+    } catch (error) {
+      if (error instanceof ContentPolicyError || error instanceof OrderFailedError) {
+        throw new UnrecoverableError(error.message)
+      }
+      throw error
+    }
+  },
+  { connection, concurrency: 1 },
+)
+
+productOrderWorker.on('failed', async (job, error) => {
+  console.error(`[order] failed: ${error.message}`)
+  if (!job) return
+  const willRetry =
+    !(error instanceof UnrecoverableError) && job.attemptsMade < (job.opts.attempts ?? 1)
+  if (willRetry) return
+
+  const [changed] = await db
+    .update(stories)
+    .set({ status: 'failed', failReason: error.message, updatedAt: new Date() })
+    .where(and(eq(stories.id, job.data.storyId), ne(stories.status, 'failed')))
+    .returning()
+  if (!changed) return
+
+  await refundStory(job.data.storyId)
+  console.log(`[order] ${job.data.storyId}: заказ провален, токены возвращены`)
+})
+
 castingWorker.on('failed', async (job, error) => {
   console.error(`[casting] failed: ${error.message}`)
   if (job?.data.storyId && job.attemptsMade >= (job.opts.attempts ?? 1)) {
@@ -248,7 +296,7 @@ renderWorker.on('failed', async (job, error) => {
   }
 })
 
-console.log('[worker] listening for casting, render, adreel and scene jobs')
+console.log('[worker] listening for casting, render, adreel, scene and product-order jobs')
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
@@ -257,6 +305,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
       renderWorker.close(),
       adReelWorker.close(),
       sceneWorker.close(),
+      productOrderWorker.close(),
     ])
     process.exit(0)
   })

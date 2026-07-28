@@ -1,10 +1,17 @@
 import { createDb } from '@kidsstory/db'
 import { Queue } from 'bullmq'
 import { Redis } from 'ioredis'
-import { QUEUE_ADREEL, QUEUE_CASTING, QUEUE_RENDER, QUEUE_SCENE } from '@kidsstory/shared'
+import {
+  QUEUE_ADREEL,
+  QUEUE_CASTING,
+  QUEUE_PRODUCT_ORDER,
+  QUEUE_RENDER,
+  QUEUE_SCENE,
+} from '@kidsstory/shared'
 import type {
   AdReelJobData,
   CastingJobData,
+  ProductOrderJobData,
   RenderJobData,
   SceneAssetJobData,
 } from '@kidsstory/shared'
@@ -18,3 +25,6 @@ export const castingQueue = new Queue<CastingJobData>(QUEUE_CASTING, { connectio
 export const renderQueue = new Queue<RenderJobData>(QUEUE_RENDER, { connection: redis })
 export const adReelQueue = new Queue<AdReelJobData>(QUEUE_ADREEL, { connection: redis })
 export const sceneQueue = new Queue<SceneAssetJobData>(QUEUE_SCENE, { connection: redis })
+export const productOrderQueue = new Queue<ProductOrderJobData>(QUEUE_PRODUCT_ORDER, {
+  connection: redis,
+})

@@ -31,7 +31,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Чувство',
     prompt:
-      'Sleepy little boy in striped pyjamas hides a toothbrush behind his back, sighs heavily with drooping shoulders, glances sideways at the door hoping to escape, cozy bathroom light',
+      'Little boy in a striped top holds a toothbrush behind his back, sighs heavily with drooping shoulders, glances sideways hoping to slip away and play, warm evening light, softly blurred home interior behind him',
     voiceoverText:
       'Тёме казалось, что это долго и скучно. Он вздыхал, прятал щётку за спину и думал: вот бы убежать играть! [curious] Тебе тоже так бывает?',
   },
@@ -102,7 +102,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Тепло',
     prompt:
-      'Little boy looks into the bathroom mirror and beams with a bright clean smile, rosy cheeks, proud shining eyes, rising slightly on his tiptoes, warm cozy light',
+      'Little boy looks into a mirror and beams with a bright clean smile, rosy cheeks, proud shining eyes, rising slightly on his tiptoes, warm cozy evening light',
     voiceoverText:
       '[warmly] Тёма посмотрел в зеркало — и улыбнулся. И улыбка вышла самой яркой на свете. Потому что он справился сам.',
   },
@@ -110,7 +110,7 @@ const SCENES: SeedScene[] = [
     kind: 'hero',
     title: 'Тихий повтор',
     prompt:
-      'Softer bluish night light in the bathroom, sleepy little boy brushing his teeth again but slowly and gently, calm flowing movements, eyelids growing heavy, sparkles settling down like snowflakes',
+      'Softer bluish night light, calm little boy brushing his teeth again slowly and gently, unhurried flowing movements, eyelids growing heavy, golden sparkles settling down like snowflakes around him',
     voiceoverText:
       '[whispers] «А теперь ещё разок, — шепнула щётка, — только тихо-тихо. Как будто укладываем зубки спать.» Вверх-вниз… вжик-вжик… кружок-кружок… влево-вправо… чисто.',
   },

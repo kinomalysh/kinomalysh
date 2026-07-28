@@ -22,6 +22,8 @@ const createProductSchema = z.object({
 const patchProductSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   tagline: z.string().max(200).nullable().optional(),
+  description: z.string().max(4000).nullable().optional(),
+  priceTokens: z.number().int().min(0).max(100000).optional(),
   status: z.enum(['draft', 'active', 'archived']).optional(),
 })
 const kindSchema = z.enum(['hero', 'library', 'title'])
@@ -40,6 +42,29 @@ const patchSceneSchema = z.object({
 })
 const reorderSchema = z.object({ orderedIds: z.array(z.string().uuid()).min(1).max(60) })
 const generateSchema = z.object({ target: z.enum(['clip', 'vo']) })
+
+const ACTIVE_CLIP = new Set(['queued', 'framing', 'animating'])
+const ACTIVE_VO = new Set(['queued', 'generating'])
+
+async function publishBlockers(productId: string): Promise<string[]> {
+  const scenes = await db
+    .select()
+    .from(productScenes)
+    .where(eq(productScenes.productId, productId))
+    .orderBy(asc(productScenes.position))
+  if (scenes.length === 0) return ['у продукта нет сцен']
+
+  const blockers: string[] = []
+  const noPrompt = scenes.filter((s) => !s.prompt.trim()).map((s) => s.position)
+  const noClip = scenes.filter((s) => !s.clipKey).map((s) => s.position)
+  const noVo = scenes
+    .filter((s) => s.voiceoverText?.trim() && !s.voKey)
+    .map((s) => s.position)
+  if (noPrompt.length) blockers.push(`нет промпта у сцен: ${noPrompt.join(', ')}`)
+  if (noClip.length) blockers.push(`не прогнаны сцены: ${noClip.join(', ')}`)
+  if (noVo.length) blockers.push(`нет озвучки у сцен: ${noVo.join(', ')}`)
+  return blockers
+}
 
 async function sceneDto(scene: typeof productScenes.$inferSelect) {
   let clipUrl = scene.clipUrl
@@ -61,8 +86,10 @@ async function sceneDto(scene: typeof productScenes.$inferSelect) {
     motionPrompt: scene.motionPrompt,
     clipStatus: scene.clipStatus,
     voStatus: scene.voStatus,
+    frameUrl: scene.frameUrl,
     clipUrl,
     voUrl,
+    updatedAt: scene.updatedAt.toISOString(),
     hasClip: Boolean(scene.clipKey),
     hasVo: Boolean(scene.voKey),
     failReason: scene.failReason,
@@ -121,6 +148,10 @@ export async function productRoutes(app: FastifyInstance) {
   app.patch('/admin/products/:id', async (req, reply) => {
     const { id } = req.params as { id: string }
     const body = patchProductSchema.parse(req.body)
+    if (body.status === 'active') {
+      const blockers = await publishBlockers(id)
+      if (blockers.length) return reply.code(409).send({ error: blockers.join('; ') })
+    }
     const [updated] = await db
       .update(products)
       .set({ ...body, updatedAt: new Date() })
@@ -128,6 +159,41 @@ export async function productRoutes(app: FastifyInstance) {
       .returning()
     if (!updated) return reply.code(404).send({ error: 'Продукт не найден' })
     return { ok: true }
+  })
+
+  app.get('/admin/products/:id/readiness', async (req) => {
+    const { id } = req.params as { id: string }
+    const blockers = await publishBlockers(id)
+    return { canPublish: blockers.length === 0, blockers }
+  })
+
+  app.post('/admin/products/:id/masters', async (req) => {
+    const { id } = req.params as { id: string }
+    const scenes = await db
+      .select()
+      .from(productScenes)
+      .where(eq(productScenes.productId, id))
+      .orderBy(asc(productScenes.position))
+    let queued = 0
+    for (const scene of scenes) {
+      if (!scene.clipKey && scene.prompt.trim() && !ACTIVE_CLIP.has(scene.clipStatus)) {
+        await db
+          .update(productScenes)
+          .set({ clipStatus: 'queued', failReason: null, updatedAt: new Date() })
+          .where(eq(productScenes.id, scene.id))
+        await sceneQueue.add('scene', { sceneId: scene.id, target: 'clip' })
+        queued += 1
+      }
+      if (!scene.voKey && scene.voiceoverText?.trim() && !ACTIVE_VO.has(scene.voStatus)) {
+        await db
+          .update(productScenes)
+          .set({ voStatus: 'queued', failReason: null, updatedAt: new Date() })
+          .where(eq(productScenes.id, scene.id))
+        await sceneQueue.add('scene', { sceneId: scene.id, target: 'vo' })
+        queued += 1
+      }
+    }
+    return { queued }
   })
 
   app.delete('/admin/products/:id', async (req) => {
@@ -172,13 +238,36 @@ export async function productRoutes(app: FastifyInstance) {
   app.patch('/admin/scenes/:id', async (req, reply) => {
     const { id } = req.params as { id: string }
     const body = patchSceneSchema.parse(req.body)
+    const current = await db.query.productScenes.findFirst({ where: eq(productScenes.id, id) })
+    if (!current) return reply.code(404).send({ error: 'Сцена не найдена' })
+
+    const patch: Partial<typeof productScenes.$inferInsert> = { ...body, updatedAt: new Date() }
+    const promptChanged =
+      (body.prompt !== undefined && body.prompt !== current.prompt) ||
+      (body.motionPrompt !== undefined && body.motionPrompt !== current.motionPrompt) ||
+      (body.kind !== undefined && body.kind !== current.kind)
+    const voChanged =
+      body.voiceoverText !== undefined && body.voiceoverText !== current.voiceoverText
+
+    const staleKeys: string[] = []
+    if (promptChanged && current.clipKey) {
+      staleKeys.push(current.clipKey)
+      Object.assign(patch, { clipKey: null, clipUrl: null, frameUrl: null, clipStatus: 'idle' })
+    }
+    if (voChanged && current.voKey) {
+      staleKeys.push(current.voKey)
+      Object.assign(patch, { voKey: null, voStatus: 'idle' })
+    }
+    if (isStorageConfigured && staleKeys.length) {
+      await Promise.all(staleKeys.map((k) => deleteObject(k).catch(() => undefined)))
+    }
+
     const [updated] = await db
       .update(productScenes)
-      .set({ ...body, updatedAt: new Date() })
+      .set(patch)
       .where(eq(productScenes.id, id))
       .returning()
-    if (!updated) return reply.code(404).send({ error: 'Сцена не найдена' })
-    return { scene: await sceneDto(updated) }
+    return { scene: await sceneDto(updated), invalidated: staleKeys.length > 0 }
   })
 
   app.delete('/admin/scenes/:id', async (req, reply) => {
@@ -252,4 +341,47 @@ export async function productRoutes(app: FastifyInstance) {
       .onConflictDoUpdate({ target: settings.key, set: { value: relPath, updatedAt: new Date() } })
     return { ok: true, url: `/uploads/${relPath}` }
   })
+}
+
+export async function publicCatalogRoutes(app: FastifyInstance) {
+  app.get('/catalog', async () => {
+    const rows = await db
+      .select()
+      .from(products)
+      .where(eq(products.status, 'active'))
+      .orderBy(asc(products.createdAt))
+    return { products: await Promise.all(rows.map(catalogDto)) }
+  })
+
+  app.get('/catalog/:slug', async (req, reply) => {
+    const { slug } = req.params as { slug: string }
+    const product = await db.query.products.findFirst({ where: eq(products.slug, slug) })
+    if (!product || product.status !== 'active') {
+      return reply.code(404).send({ error: 'Мультик не найден' })
+    }
+    return { product: await catalogDto(product) }
+  })
+}
+
+async function catalogDto(product: typeof products.$inferSelect) {
+  const scenes = await db
+    .select()
+    .from(productScenes)
+    .where(eq(productScenes.productId, product.id))
+    .orderBy(asc(productScenes.position))
+  const previewSource = product.previewKey ?? scenes.find((s) => s.clipKey)?.clipKey ?? null
+  let previewUrl: string | null = null
+  if (isStorageConfigured && previewSource) {
+    previewUrl = await presignGet(previewSource, { expiresIn: 3600 }).catch(() => null)
+  }
+  return {
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    tagline: product.tagline,
+    description: product.description,
+    priceTokens: product.priceTokens,
+    sceneCount: scenes.length,
+    previewUrl,
+  }
 }

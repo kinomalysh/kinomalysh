@@ -1,0 +1,182 @@
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { and, asc, eq } from 'drizzle-orm'
+import { createDb, productScenes, products, stories, storyScenes } from '@kidsstory/db'
+import { buildProductScenePrompt, REEL_NEGATIVE_PROMPT } from '@kidsstory/shared'
+import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
+import { animateFromText, animateScene, buildReelFirstFrame, ContentPolicyError } from './fal.js'
+import { generateVoiceover } from './elevenlabs.js'
+import { buildSegment, concatSegments } from './ffmpeg.js'
+
+type Db = ReturnType<typeof createDb>
+type Scene = typeof productScenes.$inferSelect
+
+const SCENE_ATTEMPTS = 3
+
+export class OrderFailedError extends Error {
+  constructor(
+    message: string,
+    public readonly permanent: boolean,
+  ) {
+    super(message)
+  }
+}
+
+async function withRetries<T>(label: string, attempts: number, task: () => Promise<T>): Promise<T> {
+  let last: unknown
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await task()
+    } catch (error) {
+      if (error instanceof ContentPolicyError) throw error
+      last = error
+      console.warn(`[order] ${label}: попытка ${attempt}/${attempts} не удалась — ${String(error)}`)
+      if (attempt < attempts) await new Promise((r) => setTimeout(r, 5000 * attempt))
+    }
+  }
+  throw last instanceof Error ? last : new Error(String(last))
+}
+
+async function downloadToFile(key: string, dest: string): Promise<void> {
+  await writeFile(dest, await getObject(key))
+}
+
+async function ensureMasterClip(db: Db, scene: Scene): Promise<string> {
+  if (scene.clipKey) return scene.clipKey
+  const key = `products/${scene.productId}/${scene.id}.mp4`
+  const url = await withRetries(`мастер-клип ${scene.id}`, SCENE_ATTEMPTS, () =>
+    animateFromText(buildProductScenePrompt(scene.prompt), {
+      aspectRatio: '16:9',
+      negativePrompt: REEL_NEGATIVE_PROMPT,
+    }),
+  )
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`мастер-клип ${scene.id}: скачивание ${res.status}`)
+  await uploadObject(key, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
+  await db
+    .update(productScenes)
+    .set({ clipKey: key, clipUrl: url, clipStatus: 'ready', updatedAt: new Date() })
+    .where(eq(productScenes.id, scene.id))
+  return key
+}
+
+async function ensureMasterVo(db: Db, scene: Scene): Promise<string | null> {
+  if (!scene.voiceoverText?.trim()) return null
+  if (scene.voKey) return scene.voKey
+  const key = `products/${scene.productId}/${scene.id}-vo.mp3`
+  const audio = await withRetries(`озвучка ${scene.id}`, SCENE_ATTEMPTS, () =>
+    generateVoiceover(scene.voiceoverText as string),
+  )
+  await uploadObject(key, audio, 'audio/mpeg')
+  await db
+    .update(productScenes)
+    .set({ voKey: key, voStatus: 'ready', updatedAt: new Date() })
+    .where(eq(productScenes.id, scene.id))
+  return key
+}
+
+async function renderHeroClip(
+  db: Db,
+  scene: Scene,
+  storyId: string,
+  photoPath: string,
+): Promise<string> {
+  const rowFilter = and(eq(storyScenes.storyId, storyId), eq(storyScenes.sceneId, scene.id))
+  const existing = await db.query.storyScenes.findFirst({ where: rowFilter })
+  if (!existing) throw new OrderFailedError(`нет строки рендера для сцены ${scene.id}`, true)
+  if (existing.status === 'ready' && existing.clipKey) {
+    console.log(`[order] ${storyId}: сцена ${scene.position} уже отрисована — пропускаю`)
+    return existing.clipKey
+  }
+
+  await db
+    .update(storyScenes)
+    .set({ status: 'rendering', attempts: existing.attempts + 1, updatedAt: new Date() })
+    .where(eq(storyScenes.id, existing.id))
+
+  const fullPrompt = buildProductScenePrompt(scene.prompt)
+  const frame = await withRetries(`кадр ${scene.id}`, SCENE_ATTEMPTS, () =>
+    buildReelFirstFrame([photoPath], fullPrompt, 'landscape_16_9'),
+  )
+  const videoUrl = await withRetries(`оживление ${scene.id}`, SCENE_ATTEMPTS, () =>
+    animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {
+      negativePrompt: REEL_NEGATIVE_PROMPT,
+    }),
+  )
+
+  const res = await fetch(videoUrl)
+  if (!res.ok) throw new Error(`клип сцены ${scene.id}: скачивание ${res.status}`)
+  const key = `orders/${storyId}/${scene.id}.mp4`
+  await uploadObject(key, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
+  await db
+    .update(storyScenes)
+    .set({ status: 'ready', clipKey: key, failReason: null, updatedAt: new Date() })
+    .where(eq(storyScenes.id, existing.id))
+  return key
+}
+
+export async function assembleProductOrder(db: Db, storyId: string): Promise<void> {
+  if (!isStorageConfigured) throw new OrderFailedError('S3 не настроен — сборка невозможна', true)
+
+  const story = await db.query.stories.findFirst({ where: eq(stories.id, storyId) })
+  if (!story) throw new OrderFailedError(`заказ ${storyId} не найден`, true)
+  if (!story.productId) throw new OrderFailedError(`у заказа ${storyId} нет продукта`, true)
+  if (!story.photoPath) throw new OrderFailedError('к заказу не приложено фото ребёнка', true)
+
+  const product = await db.query.products.findFirst({ where: eq(products.id, story.productId) })
+  if (!product) throw new OrderFailedError('продукт заказа удалён', true)
+
+  const scenes = await db
+    .select()
+    .from(productScenes)
+    .where(eq(productScenes.productId, product.id))
+    .orderBy(asc(productScenes.position))
+  if (scenes.length === 0) throw new OrderFailedError('у продукта нет сцен', true)
+
+  for (const scene of scenes.filter((s) => s.kind === 'hero')) {
+    await db
+      .insert(storyScenes)
+      .values({ storyId, sceneId: scene.id, position: scene.position })
+      .onConflictDoNothing()
+  }
+
+  const workDir = await mkdtemp(path.join(tmpdir(), `order-${storyId}-`))
+  try {
+    const segments: string[] = []
+    for (const scene of scenes) {
+      console.log(`[order] ${storyId}: сцена ${scene.position}/${scenes.length} (${scene.kind})`)
+      const clipKey =
+        scene.kind === 'hero'
+          ? await renderHeroClip(db, scene, storyId, story.photoPath)
+          : await ensureMasterClip(db, scene)
+      const voKey = await ensureMasterVo(db, scene)
+
+      const clipPath = path.join(workDir, `${scene.position}-clip.mp4`)
+      await downloadToFile(clipKey, clipPath)
+      let voPath: string | null = null
+      if (voKey) {
+        voPath = path.join(workDir, `${scene.position}-vo.mp3`)
+        await downloadToFile(voKey, voPath)
+      }
+
+      const segPath = path.join(workDir, `${String(scene.position).padStart(3, '0')}-seg.mp4`)
+      await buildSegment(clipPath, voPath, segPath)
+      segments.push(segPath)
+    }
+
+    console.log(`[order] ${storyId}: склейка ${segments.length} сегментов`)
+    const finalPath = path.join(workDir, 'final.mp4')
+    await concatSegments(segments, workDir, finalPath)
+
+    const resultKey = `orders/${storyId}/final.mp4`
+    await uploadObject(resultKey, new Uint8Array(await readFile(finalPath)), 'video/mp4')
+    await db
+      .update(stories)
+      .set({ status: 'ready', resultKey, failReason: null, updatedAt: new Date() })
+      .where(eq(stories.id, storyId))
+    console.log(`[order] ${storyId}: готов`)
+  } finally {
+    await rm(workDir, { recursive: true, force: true })
+  }
+}

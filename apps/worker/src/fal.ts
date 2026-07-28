@@ -19,6 +19,12 @@ export class FalError extends Error {
   }
 }
 
+export class ContentPolicyError extends FalError {
+  constructor(message: string) {
+    super(message, 422)
+  }
+}
+
 async function callFal(model: string, input: Record<string, unknown>): Promise<string> {
   const res = await fetch(`https://fal.run/${model}`, {
     method: 'POST',
@@ -92,6 +98,9 @@ export async function buildReelFirstFrame(
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
+    if (text.includes('content_policy_violation')) {
+      throw new ContentPolicyError('Контент-фильтр модели отклонил промпт')
+    }
     throw new FalError(`fal ${IMAGE_EDIT_MODEL} responded ${res.status}: ${text.slice(0, 300)}`, res.status)
   }
   const body = (await res.json()) as FalEditResponse
@@ -120,43 +129,87 @@ async function callFalQueue(model: string, input: Record<string, unknown>): Prom
     const text = await submit.text().catch(() => '')
     throw new FalError(`fal ${model} submit ${submit.status}: ${text.slice(0, 300)}`, submit.status)
   }
-  const { status_url: statusUrl, response_url: responseUrl } = (await submit.json()) as {
+  const {
+    status_url: statusUrl,
+    response_url: responseUrl,
+    request_id: requestId,
+  } = (await submit.json()) as {
     status_url: string
     response_url: string
+    request_id: string
   }
+  console.log(`[fal] ${model} request ${requestId}`)
 
+  let lastLogs = ''
   for (;;) {
     await sleep(5000)
-    const status = await fetch(statusUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
-    const state = (await status.json()) as { status?: string; error?: unknown }
+    const status = await fetch(`${statusUrl}?logs=1`, {
+      headers: { Authorization: `Key ${env.FAL_KEY}` },
+    })
+    const state = (await status.json()) as {
+      status?: string
+      error?: unknown
+      logs?: Array<{ message?: string }>
+    }
+    if (Array.isArray(state.logs) && state.logs.length) {
+      lastLogs = state.logs
+        .map((l) => l.message ?? '')
+        .filter(Boolean)
+        .slice(-3)
+        .join(' | ')
+    }
     if (state.status === 'COMPLETED') break
     if (state.status === 'FAILED' || state.error) {
-      throw new FalError(`fal ${model} failed: ${JSON.stringify(state).slice(0, 300)}`, 502)
+      throw new FalError(
+        `fal ${model} failed (${requestId}): ${JSON.stringify(state).slice(0, 400)}`,
+        502,
+      )
     }
   }
 
   const result = await fetch(responseUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
-  return result.json()
+  const raw = await result.text()
+  if (!result.ok) {
+    throw new FalError(
+      `fal ${model} result ${result.status} (${requestId}): ${raw.slice(0, 400)}`,
+      result.status,
+    )
+  }
+  try {
+    return JSON.parse(raw)
+  } catch {
+    throw new FalError(
+      `fal ${model} вернул не JSON (${requestId}): ${raw.slice(0, 200)}${lastLogs ? ` | логи: ${lastLogs}` : ''}`,
+      502,
+    )
+  }
+}
+
+function videoUrlOrThrow(model: string, body: unknown): string {
+  const url = (body as FalVideoResponse).video?.url
+  if (!url) {
+    throw new FalError(
+      `fal ${model} вернул ответ без видео: ${JSON.stringify(body).slice(0, 400)}`,
+      502,
+    )
+  }
+  return url
 }
 
 export async function animateScene(
   sceneImageUrl: string,
   motionPrompt: string,
-  options: { aspectRatio?: '16:9' | '9:16'; negativePrompt?: string } = {},
+  options: { negativePrompt?: string } = {},
 ): Promise<string> {
   const input: Record<string, unknown> = {
     prompt: motionPrompt,
     image_url: sceneImageUrl,
     resolution: VIDEO_MODEL.resolution,
-    duration: VIDEO_MODEL.duration,
-    generate_audio: VIDEO_MODEL.generateAudio,
+    duration: String(VIDEO_MODEL.duration),
+    generate_audio_switch: VIDEO_MODEL.generateAudio,
   }
-  if (options.aspectRatio) input.aspect_ratio = options.aspectRatio
   if (options.negativePrompt) input.negative_prompt = options.negativePrompt
-  const body = (await callFalQueue(VIDEO_MODEL.model, input)) as FalVideoResponse
-  const url = body.video?.url
-  if (!url) throw new FalError(`fal ${VIDEO_MODEL.model} returned no video`, 502)
-  return url
+  return videoUrlOrThrow(VIDEO_MODEL.model, await callFalQueue(VIDEO_MODEL.model, input))
 }
 
 const TEXT_VIDEO_MODEL = 'fal-ai/pixverse/v5.5/text-to-video'
@@ -168,12 +221,10 @@ export async function animateFromText(
   const input: Record<string, unknown> = {
     prompt,
     resolution: VIDEO_MODEL.resolution,
-    duration: VIDEO_MODEL.duration,
+    duration: String(VIDEO_MODEL.duration),
     aspect_ratio: options.aspectRatio ?? '16:9',
+    generate_audio_switch: VIDEO_MODEL.generateAudio,
   }
   if (options.negativePrompt) input.negative_prompt = options.negativePrompt
-  const body = (await callFalQueue(TEXT_VIDEO_MODEL, input)) as FalVideoResponse
-  const url = body.video?.url
-  if (!url) throw new FalError(`fal ${TEXT_VIDEO_MODEL} returned no video`, 502)
-  return url
+  return videoUrlOrThrow(TEXT_VIDEO_MODEL, await callFalQueue(TEXT_VIDEO_MODEL, input))
 }
