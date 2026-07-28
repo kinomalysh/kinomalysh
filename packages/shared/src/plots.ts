@@ -9,7 +9,7 @@ export interface PlotDef {
 }
 
 const STYLE =
-  'Disney Pixar animation style, 3D render, oversized expressive eyes, soft rounded features, deep indigo night palette with warm golden light, cinematic teal-orange color grade, storybook composition, no text'
+  'soft stylized 3D cartoon animation, 3D render, oversized expressive eyes, soft rounded features, deep indigo night palette with warm golden light, cinematic teal-orange color grade, storybook composition, no text'
 
 export const PLOTS: PlotDef[] = [
   {

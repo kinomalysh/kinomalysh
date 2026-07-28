@@ -4,7 +4,7 @@ import { IMAGE_EDIT_MODEL, VIDEO_MODEL } from '@kidsstory/shared'
 import { env } from './env.js'
 
 const AVATAR_STYLE =
-  'Create a Disney Pixar style 3D animated cartoon portrait of the person in this photo, keep the same hairstyle, clothing and joyful expression, oversized expressive eyes, soft rounded features, cute storybook hero standing on a moonlit hill with golden stars, deep indigo night palette with warm golden light, no text'
+  'Create a soft stylized 3D cartoon animation portrait of the person in this photo, keep the same hairstyle, clothing and joyful expression, oversized expressive eyes, soft rounded features, cute storybook hero standing on a moonlit hill with golden stars, deep indigo night palette with warm golden light, no text'
 
 interface FalImageResponse {
   images?: Array<{ url?: string }>

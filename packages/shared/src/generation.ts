@@ -24,7 +24,7 @@ export function estimateVideoCostUsd(heroSceneCount: number): number {
 export type ReelKind = 't2v' | 'i2v'
 
 export const REEL_STYLE =
-  'Pixar-style 3D animation, adorable characters with huge glossy expressive eyes and soft rounded features, warm cozy cinematic lighting, soft shadows, high-end render quality, shallow depth of field, vertical 9:16 composition, single continuous shot, smooth gentle camera movement, no text'
+  'soft stylized 3D cartoon animation, adorable characters with huge glossy expressive eyes and soft rounded features, warm cozy cinematic lighting, soft shadows, high-end render quality, shallow depth of field, vertical 9:16 composition, single continuous shot, smooth gentle camera movement, no text'
 
 export const REEL_NEGATIVE_PROMPT =
   'text, letters, captions, watermark, logo, extra fingers, deformed hands, three arms, creepy face, uncanny valley, photorealistic human skin, exaggerated bulging eyes, fast cuts, shaky camera, glitch, low quality'
@@ -37,7 +37,7 @@ export function buildReelPrompt(scenePrompt: string): string {
 export type SceneKind = 'hero' | 'library' | 'title'
 
 export const PRODUCT_STYLE =
-  'Disney Pixar 3D animation style, oversized expressive eyes, soft rounded features, warm cinematic lighting, deep indigo night palette with golden light, storybook composition, horizontal 16:9 composition, single continuous shot, smooth gentle camera movement, no text'
+  'soft stylized 3D cartoon animation, oversized expressive eyes, soft rounded features, warm cinematic lighting, deep indigo night palette with golden light, storybook composition, horizontal 16:9 composition, single continuous shot, smooth gentle camera movement, no text'
 
 export function buildProductScenePrompt(prompt: string): string {
   const scene = prompt.trim().replace(/\.$/, '')
