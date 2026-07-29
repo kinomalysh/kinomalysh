@@ -3,6 +3,8 @@ import { productScenes, products } from '@kidsstory/db'
 import { db } from '../context.js'
 
 const SLUG = 'teeth-pilot'
+const TITLE = 'Волшебная щётка'
+const TAGLINE = 'Пилотный товарный ролик · чистка зубов'
 
 interface SeedScene {
   kind: 'hero' | 'library' | 'title'
@@ -148,12 +150,19 @@ async function main() {
         .insert(products)
         .values({
           slug: SLUG,
-          title: 'Волшебная щётка',
-          tagline: 'Пилотный товарный ролик · чистка зубов',
+          title: TITLE,
+          tagline: TAGLINE,
           status: 'draft',
         })
         .returning()
     )[0]
+
+  if (existing) {
+    await db
+      .update(products)
+      .set({ title: TITLE, tagline: TAGLINE, updatedAt: new Date() })
+      .where(eq(products.id, product.id))
+  }
 
   const saved = await db.query.productScenes.findMany({
     where: eq(productScenes.productId, product.id),
