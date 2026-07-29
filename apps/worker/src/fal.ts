@@ -142,7 +142,7 @@ export async function downloadBytes(url: string): Promise<Uint8Array> {
   return new Uint8Array(await res.arrayBuffer())
 }
 
-async function callFalQueue(model: string, input: Record<string, unknown>): Promise<unknown> {
+export async function callFalQueue(model: string, input: Record<string, unknown>): Promise<unknown> {
   const submit = await fetchResilient(`https://queue.fal.run/${model}`, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
