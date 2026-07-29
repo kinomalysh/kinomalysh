@@ -23,6 +23,7 @@ interface Scene {
   failReason: string | null
   updatedAt: string
   approvedAt: string | null
+  personalized: boolean
   approvedClipUrl: string | null
   approvedVoUrl: string | null
   isLatestApproved: boolean
@@ -327,6 +328,22 @@ function SceneCard({
           </Field>
           <Field label="Текст озвучки">
             <Textarea rows={2} value={vo} onChange={(e) => setVo(e.target.value)} placeholder="[warmly] …" />
+            <p className="mt-1 text-xs text-ink-3">
+              Имя ребёнка — плейсхолдером с падежом:{' '}
+              <code className="text-gold">{'{имя}'}</code>{' '}
+              <code className="text-gold">{'{имя:род}'}</code>{' '}
+              <code className="text-gold">{'{имя:дат}'}</code>{' '}
+              <code className="text-gold">{'{имя:вин}'}</code>{' '}
+              <code className="text-gold">{'{имя:тв}'}</code>{' '}
+              <code className="text-gold">{'{имя:пр}'}</code>. Пример:{' '}
+              <span className="text-ink-2">{'{имя:дат} казалось, что это долго'}</span>
+            </p>
+            {scene.personalized && (
+              <p className="mt-1 text-xs text-accent">
+                Сцена персональная: озвучка синтезируется под каждого клиента, а не берётся общей.
+                Пример ниже — на тестовом имени.
+              </p>
+            )}
           </Field>
           {kind === 'hero' && (
             <Field label="Движение камеры (необязательно)">
@@ -373,7 +390,11 @@ function SceneCard({
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <span className="text-sm font-semibold text-leaf">✓ Утверждённый пример</span>
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-3">
-              {scene.kind === 'hero' ? 'уникальный, по фото ребёнка' : 'одинаковый у всех заказов'}
+              {scene.kind === 'hero'
+                ? 'видео уникальное, по фото ребёнка'
+                : scene.personalized
+                  ? 'видео общее, озвучка уникальная'
+                  : 'одинаковый у всех заказов'}
             </span>
             {scene.approvedAt && (
               <span className="text-xs text-ink-3">

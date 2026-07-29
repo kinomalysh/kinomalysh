@@ -5,6 +5,8 @@ import { adReels, createDb, productScenes, settings, stories, tokenLedger, users
 import {
   buildProductScenePrompt,
   getPlotDef,
+  hasNamePlaceholder,
+  renderVoiceoverText,
   QUEUE_ADREEL,
   QUEUE_CASTING,
   QUEUE_RENDER,
@@ -32,6 +34,8 @@ import {
 } from './fal.js'
 import { assembleProductOrder, OrderFailedError } from './productOrder.js'
 import { generateVoiceover } from './elevenlabs.js'
+
+const SAMPLE_CHILD_NAME = 'Тёма'
 
 const db = createDb(env.DATABASE_URL)
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null })
@@ -183,7 +187,15 @@ const sceneWorker = new Worker<SceneAssetJobData>(
     if (job.data.target === 'vo') {
       if (!scene.voiceoverText?.trim()) throw new Error('нет текста озвучки')
       await setSceneStatus(scene.id, { voStatus: 'generating', failReason: null })
-      const audio = await generateVoiceover(scene.voiceoverText)
+      let text = scene.voiceoverText
+      if (hasNamePlaceholder(text)) {
+        const sample = await db.query.settings.findFirst({
+          where: eq(settings.key, 'sample_child_name'),
+        })
+        text = renderVoiceoverText(text, sample?.value?.trim() || SAMPLE_CHILD_NAME, 'male')
+        console.log(`[scene] ${scene.id}: озвучка с тестовым именем`)
+      }
+      const audio = await generateVoiceover(text)
       let voKey: string | null = null
       if (isStorageConfigured) {
         voKey = `products/${scene.productId}/${scene.id}-vo.mp3`

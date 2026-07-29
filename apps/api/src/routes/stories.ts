@@ -5,6 +5,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { and, desc, eq } from 'drizzle-orm'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+import { z } from 'zod'
 import { products, stories } from '@kidsstory/db'
 import {
   chooseAvatarSchema,
@@ -17,6 +18,16 @@ import { env } from '../env.js'
 import { holdTokens, InsufficientBalanceError } from '../lib/tokens.js'
 import { isStorageConfigured, presignGet } from '@kidsstory/storage'
 import { eq as eqOp } from 'drizzle-orm'
+
+const productOrderQuery = z.object({
+  childName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(30)
+    .regex(/^[А-Яа-яЁёA-Za-z-]+$/, 'только буквы и дефис'),
+  gender: z.enum(['male', 'female']).default('male'),
+})
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -39,6 +50,10 @@ export async function storyRoutes(app: FastifyInstance) {
 
   app.post('/stories/product/:slug', async (req, reply) => {
     const { slug } = req.params as { slug: string }
+    const parsed = productOrderQuery.safeParse(req.query)
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Укажите имя ребёнка' })
+    }
     const product = await db.query.products.findFirst({ where: eqOp(products.slug, slug) })
     if (!product || product.status !== 'active') {
       return reply.code(404).send({ error: 'Мультик не найден' })
@@ -54,6 +69,8 @@ export async function storyRoutes(app: FastifyInstance) {
         status: 'awaiting_payment',
         photoPath: saved,
         productId: product.id,
+        childName: parsed.data.childName,
+        gender: parsed.data.gender,
         tokensCost: product.priceTokens,
       })
       .returning()

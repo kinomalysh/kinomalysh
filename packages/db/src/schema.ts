@@ -169,6 +169,7 @@ export const storyScenes = pgTable('story_scenes', {
   position: integer('position').notNull(),
   status: varchar('status', { length: 16 }).notNull().default('pending'),
   clipKey: text('clip_key'),
+  voKey: text('vo_key'),
   attempts: integer('attempts').notNull().default(0),
   failReason: text('fail_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

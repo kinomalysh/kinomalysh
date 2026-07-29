@@ -3,9 +3,16 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { and, asc, eq } from 'drizzle-orm'
 import { createDb, productScenes, products, stories, storyScenes } from '@kidsstory/db'
-import { buildProductScenePrompt, REEL_NEGATIVE_PROMPT } from '@kidsstory/shared'
+import {
+  buildProductScenePrompt,
+  hasNamePlaceholder,
+  REEL_NEGATIVE_PROMPT,
+  renderVoiceoverText,
+} from '@kidsstory/shared'
+import type { ChildGender } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { animateScene, buildReelFirstFrame, ContentPolicyError } from './fal.js'
+import { generateVoiceover } from './elevenlabs.js'
 import { buildSegment, concatSegments } from './ffmpeg.js'
 
 type Db = ReturnType<typeof createDb>
@@ -56,6 +63,33 @@ function approvedVo(scene: Scene): string | null {
   return scene.approvedVoKey
 }
 
+async function renderPersonalVo(
+  db: Db,
+  scene: Scene,
+  storyId: string,
+  childName: string,
+  gender: ChildGender,
+): Promise<string> {
+  const row = await db.query.storyScenes.findFirst({
+    where: and(eq(storyScenes.storyId, storyId), eq(storyScenes.sceneId, scene.id)),
+  })
+  if (!row) throw new OrderFailedError(`нет строки рендера для сцены ${scene.id}`, true)
+  if (row.voKey) return row.voKey
+
+  const text = renderVoiceoverText(scene.voiceoverText as string, childName, gender)
+  console.log(`[order] ${storyId}: персональная озвучка сцены ${scene.position}`)
+  const audio = await withRetries(`озвучка ${scene.id}`, SCENE_ATTEMPTS, () =>
+    generateVoiceover(text),
+  )
+  const key = `orders/${storyId}/${scene.id}-vo.mp3`
+  await uploadObject(key, audio, 'audio/mpeg')
+  await db
+    .update(storyScenes)
+    .set({ voKey: key, updatedAt: new Date() })
+    .where(eq(storyScenes.id, row.id))
+  return key
+}
+
 async function renderHeroClip(
   db: Db,
   scene: Scene,
@@ -103,6 +137,8 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
   if (!story) throw new OrderFailedError(`заказ ${storyId} не найден`, true)
   if (!story.productId) throw new OrderFailedError(`у заказа ${storyId} нет продукта`, true)
   if (!story.photoPath) throw new OrderFailedError('к заказу не приложено фото ребёнка', true)
+  const childName = story.childName?.trim() ?? ''
+  const gender: ChildGender = story.gender === 'female' ? 'female' : 'male'
 
   const product = await db.query.products.findFirst({ where: eq(products.id, story.productId) })
   if (!product) throw new OrderFailedError('продукт заказа удалён', true)
@@ -113,8 +149,12 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
     .where(eq(productScenes.productId, product.id))
     .orderBy(asc(productScenes.position))
   if (scenes.length === 0) throw new OrderFailedError('у продукта нет сцен', true)
+  if (!childName && scenes.some((s) => hasNamePlaceholder(s.voiceoverText))) {
+    throw new OrderFailedError('в заказе нет имени ребёнка, а озвучка персональная', true)
+  }
 
-  for (const scene of scenes.filter((s) => s.kind === 'hero')) {
+  const needsOrderRow = (s: Scene) => s.kind === 'hero' || hasNamePlaceholder(s.voiceoverText)
+  for (const scene of scenes.filter(needsOrderRow)) {
     await db
       .insert(storyScenes)
       .values({ storyId, sceneId: scene.id, position: scene.position })
@@ -130,7 +170,9 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
         scene.kind === 'hero'
           ? await renderHeroClip(db, scene, storyId, story.photoPath)
           : approvedClip(scene)
-      const voKey = approvedVo(scene)
+      const voKey = hasNamePlaceholder(scene.voiceoverText)
+        ? await renderPersonalVo(db, scene, storyId, childName, gender)
+        : approvedVo(scene)
 
       const clipPath = path.join(workDir, `${scene.position}-clip.mp4`)
       await downloadToFile(clipKey, clipPath)

@@ -7,6 +7,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { productScenes, products, settings } from '@kidsstory/db'
 import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
+import { hasNamePlaceholder, NAME_PLACEHOLDER_HINT } from '@kidsstory/shared'
 import { z } from 'zod'
 import { db, sceneQueue } from '../context.js'
 import { env } from '../env.js'
@@ -102,6 +103,7 @@ async function sceneDto(scene: typeof productScenes.$inferSelect) {
     voUrl,
     updatedAt: scene.updatedAt.toISOString(),
     approvedAt: scene.approvedAt?.toISOString() ?? null,
+    personalized: hasNamePlaceholder(scene.voiceoverText),
     approvedClipUrl,
     approvedVoUrl,
     isLatestApproved: Boolean(scene.clipKey) && scene.clipKey === scene.approvedClipKey,
@@ -381,6 +383,8 @@ export async function productRoutes(app: FastifyInstance) {
       .returning()
     return { scene: await sceneDto(updated) }
   })
+
+  app.get('/admin/placeholders', async () => ({ hint: NAME_PLACEHOLDER_HINT }))
 
   app.get('/admin/settings/sample-child', async () => {
     const row = await db.query.settings.findFirst({ where: eq(settings.key, SAMPLE_KEY) })
