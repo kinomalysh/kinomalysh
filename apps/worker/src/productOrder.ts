@@ -11,7 +11,7 @@ import {
 } from '@kidsstory/shared'
 import type { ChildGender } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
-import { animateScene, buildReelFirstFrame, ContentPolicyError } from './fal.js'
+import { animateScene, buildReelFirstFrame, ContentPolicyError, downloadBytes } from './fal.js'
 import { generateVoiceover } from './elevenlabs.js'
 import { buildSegment, concatSegments } from './ffmpeg.js'
 
@@ -119,10 +119,8 @@ async function renderHeroClip(
     }),
   )
 
-  const res = await fetch(videoUrl)
-  if (!res.ok) throw new Error(`клип сцены ${scene.id}: скачивание ${res.status}`)
   const key = `orders/${storyId}/${scene.id}.mp4`
-  await uploadObject(key, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
+  await uploadObject(key, await downloadBytes(videoUrl), 'video/mp4')
   await db
     .update(storyScenes)
     .set({ status: 'ready', clipKey: key, failReason: null, updatedAt: new Date() })

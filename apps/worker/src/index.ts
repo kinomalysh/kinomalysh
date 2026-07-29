@@ -28,6 +28,7 @@ import {
   animateScene,
   buildReelFirstFrame,
   ContentPolicyError,
+  downloadBytes,
   generateAvatars,
   generateScene,
   photoDataUri,
@@ -145,9 +146,7 @@ const adReelWorker = new Worker<AdReelJobData>(
     if (isStorageConfigured) {
       try {
         console.log(`[adreel] ${reel.id}: uploading to S3`)
-        const res = await fetch(videoUrl)
-        if (!res.ok) throw new Error(`download ${res.status}`)
-        const bytes = new Uint8Array(await res.arrayBuffer())
+        const bytes = await downloadBytes(videoUrl)
         resultKey = `reels/${reel.id}.mp4`
         await uploadObject(resultKey, bytes, 'video/mp4')
       } catch (error) {
@@ -237,10 +236,8 @@ const sceneWorker = new Worker<SceneAssetJobData>(
 
     let clipKey: string | null = null
     if (isStorageConfigured) {
-      const res = await fetch(videoUrl)
-      if (!res.ok) throw new Error(`download ${res.status}`)
       clipKey = `products/${scene.productId}/${scene.id}.mp4`
-      await uploadObject(clipKey, new Uint8Array(await res.arrayBuffer()), 'video/mp4')
+      await uploadObject(clipKey, await downloadBytes(videoUrl), 'video/mp4')
     }
     await setSceneStatus(scene.id, { clipStatus: 'ready', clipUrl: videoUrl, clipKey })
     console.log(`[scene] ${scene.id}: clip ready`)

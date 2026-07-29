@@ -26,7 +26,7 @@ export class ContentPolicyError extends FalError {
 }
 
 async function callFal(model: string, input: Record<string, unknown>): Promise<string> {
-  const res = await fetch(`https://fal.run/${model}`, {
+  const res = await fetchResilient(`https://fal.run/${model}`, {
     method: 'POST',
     headers: {
       Authorization: `Key ${env.FAL_KEY}`,
@@ -86,7 +86,7 @@ export async function buildReelFirstFrame(
   imageSize: 'portrait_16_9' | 'landscape_16_9' = 'portrait_16_9',
 ): Promise<string> {
   const imageUris = await Promise.all(photoPaths.map(photoToDataUri))
-  const res = await fetch(`https://fal.run/${IMAGE_EDIT_MODEL}`, {
+  const res = await fetchResilient(`https://fal.run/${IMAGE_EDIT_MODEL}`, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -119,8 +119,31 @@ interface FalVideoResponse {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const NETWORK_ATTEMPTS = 5
+const QUEUE_DEADLINE_MS = 25 * 60 * 1000
+
+async function fetchResilient(url: string, init?: RequestInit): Promise<Response> {
+  let last: unknown
+  for (let attempt = 1; attempt <= NETWORK_ATTEMPTS; attempt += 1) {
+    try {
+      return await fetch(url, init)
+    } catch (error) {
+      last = error
+      console.warn(`[fal] сеть подвела (${attempt}/${NETWORK_ATTEMPTS}): ${String(error)}`)
+      if (attempt < NETWORK_ATTEMPTS) await sleep(3000 * attempt)
+    }
+  }
+  throw new FalError(`сеть недоступна после ${NETWORK_ATTEMPTS} попыток: ${String(last)}`, 503)
+}
+
+export async function downloadBytes(url: string): Promise<Uint8Array> {
+  const res = await fetchResilient(url)
+  if (!res.ok) throw new FalError(`скачивание ${res.status}`, res.status)
+  return new Uint8Array(await res.arrayBuffer())
+}
+
 async function callFalQueue(model: string, input: Record<string, unknown>): Promise<unknown> {
-  const submit = await fetch(`https://queue.fal.run/${model}`, {
+  const submit = await fetchResilient(`https://queue.fal.run/${model}`, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -141,9 +164,13 @@ async function callFalQueue(model: string, input: Record<string, unknown>): Prom
   console.log(`[fal] ${model} request ${requestId}`)
 
   let lastLogs = ''
+  const deadline = Date.now() + QUEUE_DEADLINE_MS
   for (;;) {
+    if (Date.now() > deadline) {
+      throw new FalError(`fal ${model} не ответил за 25 минут (${requestId})`, 504)
+    }
     await sleep(5000)
-    const status = await fetch(`${statusUrl}?logs=1`, {
+    const status = await fetchResilient(`${statusUrl}?logs=1`, {
       headers: { Authorization: `Key ${env.FAL_KEY}` },
     })
     const state = (await status.json()) as {
@@ -167,7 +194,9 @@ async function callFalQueue(model: string, input: Record<string, unknown>): Prom
     }
   }
 
-  const result = await fetch(responseUrl, { headers: { Authorization: `Key ${env.FAL_KEY}` } })
+  const result = await fetchResilient(responseUrl, {
+    headers: { Authorization: `Key ${env.FAL_KEY}` },
+  })
   const raw = await result.text()
   if (raw.includes('content_policy_violation')) {
     throw new ContentPolicyError(`Контент-фильтр модели отклонил промпт (${requestId})`)
