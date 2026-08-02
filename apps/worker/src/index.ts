@@ -125,40 +125,45 @@ const adReelWorker = new Worker<AdReelJobData>(
     if (!reel) throw new Error(`reel ${job.data.reelId} not found`)
     if (reel.inputPhotos.length === 0) throw new Error(`reel ${reel.id} has no input photos`)
 
-    let sceneImageUrl: string
-    if (reel.kind === 't2v') {
-      console.log(`[adreel] ${reel.id}: building first frame`)
-      await setReelStatus(reel.id, { status: 'framing' })
-      sceneImageUrl = await buildReelFirstFrame(reel.inputPhotos, reel.fullPrompt)
-      await setReelStatus(reel.id, { firstFrameUrl: sceneImageUrl })
-    } else {
-      sceneImageUrl = await photoDataUri(reel.inputPhotos[0])
-    }
-
-    console.log(`[adreel] ${reel.id}: animating`)
-    await setReelStatus(reel.id, { status: 'animating' })
-    const motionPrompt = reel.motionPrompt?.trim() || reel.fullPrompt
-    const videoUrl = await animateScene(sceneImageUrl, motionPrompt, {
-      negativePrompt: REEL_NEGATIVE_PROMPT,
-    })
-
-    let resultKey: string | null = null
-    if (isStorageConfigured) {
-      try {
-        console.log(`[adreel] ${reel.id}: uploading to S3`)
-        const bytes = await downloadBytes(videoUrl)
-        resultKey = `reels/${reel.id}.mp4`
-        await uploadObject(resultKey, bytes, 'video/mp4')
-      } catch (error) {
-        resultKey = null
-        console.error(`[adreel] ${reel.id}: S3 upload failed, keeping fal url — ${String(error)}`)
+    try {
+      let sceneImageUrl: string
+      if (reel.kind === 't2v') {
+        console.log(`[adreel] ${reel.id}: building first frame`)
+        await setReelStatus(reel.id, { status: 'framing' })
+        sceneImageUrl = await buildReelFirstFrame(reel.inputPhotos, reel.fullPrompt)
+        await setReelStatus(reel.id, { firstFrameUrl: sceneImageUrl })
+      } else {
+        sceneImageUrl = await photoDataUri(reel.inputPhotos[0])
       }
-    }
 
-    await setReelStatus(reel.id, { status: 'ready', resultUrl: videoUrl, resultKey })
-    console.log(`[adreel] ${reel.id}: ready`)
+      console.log(`[adreel] ${reel.id}: animating`)
+      await setReelStatus(reel.id, { status: 'animating' })
+      const motionPrompt = reel.motionPrompt?.trim() || reel.fullPrompt
+      const videoUrl = await animateScene(sceneImageUrl, motionPrompt, {
+        negativePrompt: REEL_NEGATIVE_PROMPT,
+      })
+
+      let resultKey: string | null = null
+      if (isStorageConfigured) {
+        try {
+          console.log(`[adreel] ${reel.id}: uploading to S3`)
+          const bytes = await downloadBytes(videoUrl)
+          resultKey = `reels/${reel.id}.mp4`
+          await uploadObject(resultKey, bytes, 'video/mp4')
+        } catch (error) {
+          resultKey = null
+          console.error(`[adreel] ${reel.id}: S3 upload failed, keeping fal url — ${String(error)}`)
+        }
+      }
+
+      await setReelStatus(reel.id, { status: 'ready', resultUrl: videoUrl, resultKey })
+      console.log(`[adreel] ${reel.id}: ready`)
+    } catch (error) {
+      if (error instanceof ContentPolicyError) job.discard()
+      throw error
+    }
   },
-  { connection, concurrency: 2 },
+  { connection, concurrency: 4 },
 )
 
 adReelWorker.on('failed', async (job, error) => {

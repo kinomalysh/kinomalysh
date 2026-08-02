@@ -374,7 +374,11 @@ async function protectedAdminRoutes(app: FastifyInstance) {
         status: 'queued',
       })
       .returning()
-    await adReelQueue.add('adreel', { reelId: reel.id })
+    await adReelQueue.add(
+      'adreel',
+      { reelId: reel.id },
+      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+    )
     return reply.code(201).send({ reel: await reelDto(reel) })
   })
 }
