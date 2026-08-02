@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { api, getAccess } from '@/shared/api'
+import { api } from '@/shared/api'
+import { SamplePhoto } from '@/shared/SamplePhoto'
 import { useAsync } from '@/shared/useAsync'
 import { Button, Card, cn, ErrorText, Field, Input, Spinner, Textarea } from '@/shared/ui'
 
@@ -149,54 +150,6 @@ function StageBar({
   )
 }
 
-function SampleChild() {
-  const { data, reload } = useAsync(
-    () => api<{ hasSample: boolean; url: string | null }>('/admin/settings/sample-child'),
-    [],
-  )
-  const [busy, setBusy] = useState(false)
-  const ref = useRef<HTMLInputElement>(null)
-
-  const upload = async (file: File) => {
-    setBusy(true)
-    const form = new FormData()
-    form.set('photo', file)
-    try {
-      await fetch('/api/admin/settings/sample-child', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getAccess()}` },
-        body: form,
-      })
-      reload()
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Card className="flex items-center gap-4">
-      {data?.url ? (
-        <img src={data.url} alt="Тест-ребёнок" className="h-16 w-16 rounded-xl object-cover" />
-      ) : (
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-surface-2 text-2xl">🙂</div>
-      )}
-      <div className="flex-1">
-        <p className="text-sm font-medium">Тестовое фото ребёнка</p>
-        <p className="text-xs text-ink-3">Нужно для превью геройских сцен. Одно на всю студию.</p>
-      </div>
-      <input
-        ref={ref}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        hidden
-        onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-      />
-      <Button variant="ghost" loading={busy} onClick={() => ref.current?.click()}>
-        {data?.hasSample ? 'Заменить' : 'Загрузить'}
-      </Button>
-    </Card>
-  )
-}
 
 function SceneCard({
   scene,
@@ -634,7 +587,12 @@ export function ProductDetailPage() {
 
       <ProductSettings product={data.product} onChanged={reload} />
 
-      <SampleChild />
+      <SamplePhoto
+        slug="sample-child"
+        label="Тестовое фото ребёнка"
+        hint="Нужно для превью геройских сцен. Одно на всю студию."
+        fallbackEmoji="🙂"
+      />
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Сцены ({scenes.length})</h2>

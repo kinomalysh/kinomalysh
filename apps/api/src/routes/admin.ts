@@ -4,9 +4,9 @@ import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, gte, ilike, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, inArray, or, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
-import { adReels, admins, payments, stories, tokenLedger, users } from '@kidsstory/db'
+import { adReels, admins, payments, settings, stories, tokenLedger, users } from '@kidsstory/db'
 import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
 import {
   adjustBalanceSchema,
@@ -23,6 +23,18 @@ import { issueAdminTokens, revokeAdminRefresh, rotateAdminRefresh } from '../lib
 
 const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const PAGE_SIZE = 30
+const SAMPLE_CHILD_KEY = 'sample_child_photo'
+const SAMPLE_PARENTS_KEY = 'sample_parents_photo'
+
+async function defaultCastPhotos(): Promise<string[]> {
+  const rows = await db.query.settings.findMany({
+    where: inArray(settings.key, [SAMPLE_CHILD_KEY, SAMPLE_PARENTS_KEY]),
+  })
+  const byKey = new Map(rows.map((row) => [row.key, row.value]))
+  return [byKey.get(SAMPLE_CHILD_KEY), byKey.get(SAMPLE_PARENTS_KEY)].filter(
+    (value): value is string => Boolean(value),
+  )
+}
 
 const refreshSchema = z.object({ refreshToken: z.string().min(1) })
 const listQuerySchema = z.object({
@@ -335,8 +347,16 @@ async function protectedAdminRoutes(app: FastifyInstance) {
     }
 
     const body = createReelSchema.parse(fields)
-    if (photos.length === 0) return reply.code(400).send({ error: 'Приложите хотя бы одно фото' })
-    if (body.kind === 'i2v' && photos.length !== 1) {
+    let inputPhotos = photos
+    if (inputPhotos.length === 0 && body.kind === 't2v') {
+      inputPhotos = await defaultCastPhotos()
+    }
+    if (inputPhotos.length === 0) {
+      return reply
+        .code(400)
+        .send({ error: 'Приложите фото или задайте каст по умолчанию в настройках роликов' })
+    }
+    if (body.kind === 'i2v' && inputPhotos.length !== 1) {
       return reply.code(400).send({ error: 'Для оживления сцены нужна ровно одна картинка' })
     }
 
@@ -350,7 +370,7 @@ async function protectedAdminRoutes(app: FastifyInstance) {
         scenePrompt: body.scenePrompt,
         fullPrompt,
         motionPrompt: body.motionPrompt ?? null,
-        inputPhotos: photos,
+        inputPhotos,
         status: 'queued',
       })
       .returning()

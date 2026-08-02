@@ -13,7 +13,8 @@ import { db, sceneQueue } from '../context.js'
 import { env } from '../env.js'
 
 const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const SAMPLE_KEY = 'sample_child_photo'
+export const SAMPLE_CHILD_KEY = 'sample_child_photo'
+export const SAMPLE_PARENTS_KEY = 'sample_parents_photo'
 
 const createProductSchema = z.object({
   title: z.string().min(1).max(120),
@@ -386,26 +387,36 @@ export async function productRoutes(app: FastifyInstance) {
 
   app.get('/admin/placeholders', async () => ({ hint: NAME_PLACEHOLDER_HINT }))
 
-  app.get('/admin/settings/sample-child', async () => {
-    const row = await db.query.settings.findFirst({ where: eq(settings.key, SAMPLE_KEY) })
+  registerSamplePhotoRoutes(app, 'sample-child', SAMPLE_CHILD_KEY, 'child')
+  registerSamplePhotoRoutes(app, 'sample-parents', SAMPLE_PARENTS_KEY, 'parents')
+}
+
+function registerSamplePhotoRoutes(
+  app: FastifyInstance,
+  slug: string,
+  key: string,
+  filePrefix: string,
+) {
+  app.get(`/admin/settings/${slug}`, async () => {
+    const row = await db.query.settings.findFirst({ where: eq(settings.key, key) })
     return { hasSample: Boolean(row?.value), url: row ? `/uploads/${row.value}` : null }
   })
 
-  app.post('/admin/settings/sample-child', async (req, reply) => {
+  app.post(`/admin/settings/${slug}`, async (req, reply) => {
     const file = await req.file({ limits: { fileSize: 12 * 1024 * 1024 } })
     if (!file) return reply.code(400).send({ error: 'Приложите фото' })
     if (!PHOTO_TYPES.has(file.mimetype)) {
       return reply.code(400).send({ error: 'JPG, PNG или WebP' })
     }
     const ext = file.mimetype === 'image/png' ? 'png' : file.mimetype === 'image/webp' ? 'webp' : 'jpg'
-    const relPath = path.join('sample', `child-${randomUUID()}.${ext}`)
+    const relPath = path.join('sample', `${filePrefix}-${randomUUID()}.${ext}`)
     const absPath = path.join(env.UPLOADS_DIR, relPath)
     await mkdir(path.dirname(absPath), { recursive: true })
     await pipeline(file.file, createWriteStream(absPath))
     if (file.file.truncated) return reply.code(400).send({ error: 'Файл больше 12 МБ' })
     await db
       .insert(settings)
-      .values({ key: SAMPLE_KEY, value: relPath })
+      .values({ key, value: relPath })
       .onConflictDoUpdate({ target: settings.key, set: { value: relPath, updatedAt: new Date() } })
     return { ok: true, url: `/uploads/${relPath}` }
   })

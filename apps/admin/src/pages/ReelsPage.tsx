@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/shared/api'
+import { SamplePhoto } from '@/shared/SamplePhoto'
 import { useAsync } from '@/shared/useAsync'
 import { Badge, Button, Card, cn, ErrorText, Field, Input, Spinner, Textarea } from '@/shared/ui'
 
@@ -200,15 +201,16 @@ export function ReelsPage() {
   const submit = async () => {
     setErr('')
     if (scenePrompt.trim().length < 3) return setErr('Опишите сцену')
-    if (!files || files.length === 0) return setErr('Приложите фото')
-    if (kind === 'i2v' && files.length !== 1) return setErr('Для оживления нужна ровно одна картинка сцены')
+    if (kind === 'i2v' && (!files || files.length !== 1)) {
+      return setErr('Для оживления нужна ровно одна картинка сцены')
+    }
 
     const form = new FormData()
     form.set('kind', kind)
     if (title) form.set('title', title)
     form.set('scenePrompt', scenePrompt)
     if (kind === 't2v' && motionPrompt) form.set('motionPrompt', motionPrompt)
-    Array.from(files).forEach((f) => form.append('photos', f))
+    if (files) Array.from(files).forEach((f) => form.append('photos', f))
 
     setBusy(true)
     try {
@@ -240,6 +242,21 @@ export function ReelsPage() {
         <p className="text-sm text-ink-3">Стиль Pixar и вертикаль 9:16 зашиты по умолчанию — опишите только сцену.</p>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SamplePhoto
+          slug="sample-child"
+          label="Ребёнок по умолчанию"
+          hint="Используется в «Рилс из фото», если не приложить своё фото."
+          fallbackEmoji="🧒"
+        />
+        <SamplePhoto
+          slug="sample-parents"
+          label="Родители по умолчанию"
+          hint="Используется в «Рилс из фото», если не приложить своё фото."
+          fallbackEmoji="👨‍👩‍👧"
+        />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
         <Card className="h-fit">
           <div className="mb-4 flex gap-2">
@@ -259,7 +276,7 @@ export function ReelsPage() {
 
           <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-xs text-ink-3">
             {kind === 't2v'
-              ? 'Загрузите фото ребёнка (и родителей) — сделаем Pixar-кадр и оживим его.'
+              ? 'По умолчанию используется каст сверху. Приложите свои фото, только если нужны другие лица.'
               : 'Загрузите готовую картинку сцены — оживим её через PixVerse.'}
           </p>
 
@@ -284,7 +301,7 @@ export function ReelsPage() {
                 <Input value={motionPrompt} onChange={(e) => setMotionPrompt(e.target.value)} placeholder="slow push-in, soft parallax" />
               </Field>
             )}
-            <Field label={kind === 't2v' ? 'Фото ребёнка / родителей' : 'Картинка сцены'}>
+            <Field label={kind === 't2v' ? 'Свои фото (необязательно)' : 'Картинка сцены'}>
               <input
                 ref={fileRef}
                 type="file"
