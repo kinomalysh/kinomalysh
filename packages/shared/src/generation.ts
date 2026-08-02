@@ -15,7 +15,7 @@ export const VIDEO_MODEL: VideoModelConfig = {
 }
 
 export const IMAGE_MODEL = 'fal-ai/nano-banana-2'
-export const IMAGE_EDIT_MODEL = 'fal-ai/nano-banana/edit'
+export const IMAGE_EDIT_MODEL = 'fal-ai/nano-banana-pro/edit'
 
 export function estimateVideoCostUsd(heroSceneCount: number): number {
   return Number((heroSceneCount * VIDEO_MODEL.costUsdPerClip).toFixed(2))
