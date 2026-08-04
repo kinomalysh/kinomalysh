@@ -76,7 +76,11 @@ async function renderPersonalVo(
   if (!row) throw new OrderFailedError(`нет строки рендера для сцены ${scene.id}`, true)
   if (row.voKey) return row.voKey
 
-  const text = renderVoiceoverText(scene.voiceoverText as string, childName, gender)
+  const voiceoverText =
+    gender === 'female' && scene.voiceoverTextFemale?.trim()
+      ? scene.voiceoverTextFemale
+      : (scene.voiceoverText as string)
+  const text = renderVoiceoverText(voiceoverText, childName, gender)
   console.log(`[order] ${storyId}: персональная озвучка сцены ${scene.position}`)
   const audio = await withRetries(`озвучка ${scene.id}`, SCENE_ATTEMPTS, () =>
     generateVoiceover(text),
@@ -95,6 +99,7 @@ async function renderHeroClip(
   scene: Scene,
   storyId: string,
   photoPath: string,
+  gender: ChildGender,
 ): Promise<string> {
   const rowFilter = and(eq(storyScenes.storyId, storyId), eq(storyScenes.sceneId, scene.id))
   const existing = await db.query.storyScenes.findFirst({ where: rowFilter })
@@ -109,7 +114,9 @@ async function renderHeroClip(
     .set({ status: 'rendering', attempts: existing.attempts + 1, updatedAt: new Date() })
     .where(eq(storyScenes.id, existing.id))
 
-  const fullPrompt = buildProductScenePrompt(scene.prompt)
+  const promptText =
+    gender === 'female' && scene.promptFemale?.trim() ? scene.promptFemale : scene.prompt
+  const fullPrompt = buildProductScenePrompt(promptText)
   const frame = await withRetries(`кадр ${scene.id}`, SCENE_ATTEMPTS, () =>
     buildReelFirstFrame([photoPath], fullPrompt, 'landscape_16_9'),
   )
@@ -166,7 +173,7 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
       console.log(`[order] ${storyId}: сцена ${scene.position}/${scenes.length} (${scene.kind})`)
       const clipKey =
         scene.kind === 'hero'
-          ? await renderHeroClip(db, scene, storyId, story.photoPath)
+          ? await renderHeroClip(db, scene, storyId, story.photoPath, gender)
           : approvedClip(scene)
       const voKey = hasNamePlaceholder(scene.voiceoverText)
         ? await renderPersonalVo(db, scene, storyId, childName, gender)

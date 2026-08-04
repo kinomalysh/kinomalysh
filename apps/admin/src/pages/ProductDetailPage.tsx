@@ -14,7 +14,9 @@ interface Scene {
   kind: SceneKind
   title: string | null
   prompt: string
+  promptFemale: string | null
   voiceoverText: string | null
+  voiceoverTextFemale: string | null
   motionPrompt: string | null
   clipStatus: string
   voStatus: string
@@ -167,7 +169,9 @@ function SceneCard({
   const [kind, setKind] = useState<SceneKind>(scene.kind)
   const [title, setTitle] = useState(scene.title ?? '')
   const [prompt, setPrompt] = useState(scene.prompt)
+  const [promptFemale, setPromptFemale] = useState(scene.promptFemale ?? '')
   const [vo, setVo] = useState(scene.voiceoverText ?? '')
+  const [voFemale, setVoFemale] = useState(scene.voiceoverTextFemale ?? '')
   const [motion, setMotion] = useState(scene.motionPrompt ?? '')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
@@ -176,7 +180,9 @@ function SceneCard({
     kind !== scene.kind ||
     title !== (scene.title ?? '') ||
     prompt !== scene.prompt ||
+    promptFemale !== (scene.promptFemale ?? '') ||
     vo !== (scene.voiceoverText ?? '') ||
+    voFemale !== (scene.voiceoverTextFemale ?? '') ||
     motion !== (scene.motionPrompt ?? '')
 
   const clipBusy = CLIP_ACTIVE.has(scene.clipStatus)
@@ -206,7 +212,9 @@ function SceneCard({
           kind,
           title: title || null,
           prompt,
+          promptFemale: promptFemale || null,
           voiceoverText: vo || null,
+          voiceoverTextFemale: voFemale || null,
           motionPrompt: motion || null,
         },
       })
@@ -276,10 +284,24 @@ function SceneCard({
           </Field>
         </div>
         <div className="space-y-3">
-          <Field label="Промпт генерации (сцена)">
+          <Field label="Промпт генерации (сцена) — мальчик / по умолчанию">
             <Textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
           </Field>
-          <Field label="Текст озвучки">
+          {kind === 'hero' && (
+            <Field label="Промпт генерации — девочка (необязательно)">
+              <Textarea
+                rows={3}
+                value={promptFemale}
+                onChange={(e) => setPromptFemale(e.target.value)}
+                placeholder="Пусто = берётся промпт по умолчанию"
+              />
+              <p className="mt-1 text-xs text-ink-3">
+                Заполните, если промпт по умолчанию описывает внешность/пол ребёнка текстом (например
+                «a little boy») — иначе модель может проигнорировать фото клиентки.
+              </p>
+            </Field>
+          )}
+          <Field label="Текст озвучки — мальчик / по умолчанию">
             <Textarea rows={2} value={vo} onChange={(e) => setVo(e.target.value)} placeholder="[warmly] …" />
             <p className="mt-1 text-xs text-ink-3">
               Имя ребёнка — плейсхолдером с падежом:{' '}
@@ -298,6 +320,20 @@ function SceneCard({
               </p>
             )}
           </Field>
+          {kind === 'hero' && (
+            <Field label="Текст озвучки — девочка (необязательно)">
+              <Textarea
+                rows={2}
+                value={voFemale}
+                onChange={(e) => setVoFemale(e.target.value)}
+                placeholder="Пусто = берётся текст по умолчанию"
+              />
+              <p className="mt-1 text-xs text-ink-3">
+                Заполните, если в тексте есть род глаголов/местоимений («он вздыхал») — плейсхолдер{' '}
+                <code className="text-gold">{'{имя}'}</code> сам род не меняет.
+              </p>
+            </Field>
+          )}
           {kind === 'hero' && (
             <Field label="Движение камеры (необязательно)">
               <Input value={motion} onChange={(e) => setMotion(e.target.value)} placeholder="slow push-in" />

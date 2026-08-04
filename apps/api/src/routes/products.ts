@@ -39,7 +39,9 @@ const patchSceneSchema = z.object({
   kind: kindSchema.optional(),
   title: z.string().max(120).nullable().optional(),
   prompt: z.string().max(4000).optional(),
+  promptFemale: z.string().max(4000).nullable().optional(),
   voiceoverText: z.string().max(4000).nullable().optional(),
+  voiceoverTextFemale: z.string().max(4000).nullable().optional(),
   motionPrompt: z.string().max(2000).nullable().optional(),
 })
 const reorderSchema = z.object({ orderedIds: z.array(z.string().uuid()).min(1).max(60) })
@@ -95,7 +97,9 @@ async function sceneDto(scene: typeof productScenes.$inferSelect) {
     kind: scene.kind,
     title: scene.title,
     prompt: scene.prompt,
+    promptFemale: scene.promptFemale,
     voiceoverText: scene.voiceoverText,
+    voiceoverTextFemale: scene.voiceoverTextFemale,
     motionPrompt: scene.motionPrompt,
     clipStatus: scene.clipStatus,
     voStatus: scene.voStatus,
