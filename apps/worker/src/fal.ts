@@ -80,6 +80,11 @@ interface FalEditResponse {
   images?: Array<{ url?: string }>
 }
 
+const ASPECT_RATIO: Record<'portrait_16_9' | 'landscape_16_9', string> = {
+  portrait_16_9: '9:16',
+  landscape_16_9: '16:9',
+}
+
 export async function buildReelFirstFrame(
   photoPaths: string[],
   fullPrompt: string,
@@ -92,7 +97,7 @@ export async function buildReelFirstFrame(
     body: JSON.stringify({
       prompt: fullPrompt,
       image_urls: imageUris,
-      image_size: imageSize,
+      aspect_ratio: ASPECT_RATIO[imageSize],
       num_images: 1,
     }),
   })
