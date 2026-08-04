@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '@/shared/api'
+import { LazyVideo } from '@/shared/LazyVideo'
 import { useAsync } from '@/shared/useAsync'
 import { Badge, Button, Card, ErrorText, Spinner, Textarea } from '@/shared/ui'
 
@@ -129,7 +130,7 @@ export function OrderDetailPage() {
           <h2 className="mb-3 text-lg font-semibold">Результат</h2>
           {story.resultUrl ? (
             isVideo(story.resultUrl) ? (
-              <video src={story.resultUrl} controls className="w-full rounded-xl" />
+              <LazyVideo src={story.resultUrl} className="aspect-video w-full rounded-xl" />
             ) : (
               <img src={story.resultUrl} alt="Результат" className="w-full rounded-xl" />
             )
@@ -192,7 +193,7 @@ export function OrderDetailPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {story.scenes.map((url, i) =>
               isVideo(url) ? (
-                <video key={i} src={url} controls className="w-full rounded-lg" />
+                <LazyVideo key={i} src={url} className="aspect-video w-full rounded-lg" />
               ) : (
                 <img key={i} src={url} alt={`Сцена ${i + 1}`} className="w-full rounded-lg" />
               ),

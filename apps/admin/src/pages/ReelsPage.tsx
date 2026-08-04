@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/shared/api'
+import { LazyVideo } from '@/shared/LazyVideo'
 import { SamplePhoto } from '@/shared/SamplePhoto'
 import { useAsync } from '@/shared/useAsync'
 import { Badge, Button, Card, cn, ErrorText, Field, Input, Spinner, Textarea } from '@/shared/ui'
@@ -102,7 +103,6 @@ function ReelCard({ reel, onDelete }: { reel: Reel; onDelete: (id: string) => Pr
   const active = ACTIVE.has(reel.status)
   const [copied, setCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [revealed, setRevealed] = useState(false)
 
   const copyPrompt = async () => {
     try {
@@ -164,31 +164,11 @@ function ReelCard({ reel, onDelete }: { reel: Reel; onDelete: (id: string) => Pr
 
       {reel.resultUrl && (
         <div className="mt-3">
-          {revealed ? (
-            <video src={reel.resultUrl} controls autoPlay className="max-h-72 rounded-lg" />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setRevealed(true)}
-              className="group relative flex h-40 w-full max-w-[220px] items-center justify-center overflow-hidden rounded-lg bg-surface-2"
-            >
-              {reel.firstFrameUrl ? (
-                <img
-                  src={reel.firstFrameUrl}
-                  alt="Превью ролика"
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-3xl">🎬</span>
-              )}
-              <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
-                <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink">
-                  ▶ Смотреть
-                </span>
-              </span>
-            </button>
-          )}
+          <LazyVideo
+            src={reel.resultUrl}
+            poster={reel.firstFrameUrl}
+            className="h-40 w-full max-w-[220px] rounded-lg"
+          />
           <div className="mt-2 flex items-center gap-4 text-sm">
             <a href={reel.downloadUrl ?? reel.resultUrl} className="text-gold hover:underline">
               Скачать ↓

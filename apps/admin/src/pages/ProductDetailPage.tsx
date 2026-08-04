@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '@/shared/api'
+import { LazyVideo } from '@/shared/LazyVideo'
 import { SamplePhoto } from '@/shared/SamplePhoto'
 import { useAsync } from '@/shared/useAsync'
 import { Button, Card, cn, ErrorText, Field, Input, Spinner, Textarea } from '@/shared/ui'
@@ -398,11 +399,15 @@ function SceneCard({
             </Button>
           </div>
           <div className="flex flex-wrap items-start gap-4">
-            <video src={scene.approvedClipUrl} controls className="max-h-52 rounded-lg" />
+            <LazyVideo
+              src={scene.approvedClipUrl}
+              poster={scene.frameUrl}
+              className="h-40 w-64 max-w-full rounded-lg"
+            />
             {scene.approvedVoUrl && (
               <div className="space-y-1">
                 <p className="text-xs text-ink-3">Утверждённая озвучка</p>
-                <audio src={scene.approvedVoUrl} controls className="h-9" />
+                <audio src={scene.approvedVoUrl} controls preload="none" className="h-9" />
               </div>
             )}
           </div>
@@ -421,11 +426,17 @@ function SceneCard({
             {approved ? 'Новый прогон — сравните с утверждённым' : 'Последний прогон'}
           </p>
           <div className="flex flex-wrap items-start gap-4">
-            {scene.clipUrl && <video src={scene.clipUrl} controls className="max-h-52 rounded-lg" />}
+            {scene.clipUrl && (
+              <LazyVideo
+                src={scene.clipUrl}
+                poster={scene.frameUrl}
+                className="h-40 w-64 max-w-full rounded-lg"
+              />
+            )}
             {scene.voUrl && (
               <div className="space-y-1">
                 <p className="text-xs text-ink-3">Озвучка</p>
-                <audio src={scene.voUrl} controls className="h-9" />
+                <audio src={scene.voUrl} controls preload="none" className="h-9" />
               </div>
             )}
           </div>
