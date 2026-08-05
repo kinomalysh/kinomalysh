@@ -17,6 +17,9 @@ export const VIDEO_MODEL: VideoModelConfig = {
 export const IMAGE_MODEL = 'fal-ai/nano-banana-2'
 export const IMAGE_EDIT_MODEL = 'fal-ai/nano-banana-pro/edit'
 
+export const INTRO_CLIP_KEY = 'assets/kinomalysh-intro.mp4'
+export const SCENE_CROSSFADE_SECONDS = 0.6
+
 export function estimateVideoCostUsd(heroSceneCount: number): number {
   return Number((heroSceneCount * VIDEO_MODEL.costUsdPerClip).toFixed(2))
 }

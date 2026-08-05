@@ -6,6 +6,7 @@ import { createDb, productScenes, products, stories, storyScenes } from '@kidsst
 import {
   buildProductScenePrompt,
   hasNamePlaceholder,
+  INTRO_CLIP_KEY,
   REEL_NEGATIVE_PROMPT,
   renderVoiceoverText,
 } from '@kidsstory/shared'
@@ -13,7 +14,7 @@ import type { ChildGender } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { animateScene, buildReelFirstFrame, ContentPolicyError, downloadBytes } from './fal.js'
 import { generateVoiceover } from './elevenlabs.js'
-import { buildSegment, concatSegments } from './ffmpeg.js'
+import { buildSegment, concatSegments, normalizeIntro } from './ffmpeg.js'
 
 type Db = ReturnType<typeof createDb>
 type Scene = typeof productScenes.$inferSelect
@@ -168,7 +169,11 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
 
   const workDir = await mkdtemp(path.join(tmpdir(), `order-${storyId}-`))
   try {
-    const segments: string[] = []
+    const introRawPath = path.join(workDir, 'intro-raw.mp4')
+    const introPath = path.join(workDir, 'intro-seg.mp4')
+    await downloadToFile(INTRO_CLIP_KEY, introRawPath)
+    await normalizeIntro(introRawPath, introPath)
+    const segments: string[] = [introPath]
     for (const scene of scenes) {
       console.log(`[order] ${storyId}: сцена ${scene.position}/${scenes.length} (${scene.kind})`)
       const clipKey =

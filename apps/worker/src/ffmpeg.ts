@@ -1,7 +1,6 @@
 import { execFile } from 'node:child_process'
-import { writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import { promisify } from 'node:util'
+import { SCENE_CROSSFADE_SECONDS } from '@kidsstory/shared'
 
 const run = promisify(execFile)
 
@@ -107,13 +106,63 @@ export async function buildSegment(
   ])
 }
 
+export async function normalizeIntro(inputPath: string, outPath: string): Promise<void> {
+  await ffmpeg([
+    '-i',
+    inputPath,
+    '-filter_complex',
+    `[0:v]${NORMALIZE}[v]`,
+    '-map',
+    '[v]',
+    '-map',
+    '0:a',
+    ...VIDEO_ARGS,
+    outPath,
+  ])
+}
+
 export async function concatSegments(
   segmentPaths: string[],
-  workDir: string,
+  _workDir: string,
   outPath: string,
 ): Promise<void> {
   if (segmentPaths.length === 0) throw new FfmpegError('нечего склеивать: нет сегментов')
-  const listPath = path.join(workDir, 'concat.txt')
-  await writeFile(listPath, segmentPaths.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'))
-  await ffmpeg(['-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', outPath])
+  if (segmentPaths.length === 1) {
+    await ffmpeg(['-i', segmentPaths[0], '-c', 'copy', outPath])
+    return
+  }
+
+  const durations = await Promise.all(segmentPaths.map(probeDuration))
+  const inputs = segmentPaths.flatMap((p) => ['-i', p])
+
+  const filters: string[] = []
+  let vLabel = '0:v'
+  let aLabel = '0:a'
+  let mergedDuration = durations[0]
+
+  for (let i = 1; i < segmentPaths.length; i += 1) {
+    const fade = Math.min(SCENE_CROSSFADE_SECONDS, durations[i - 1], durations[i])
+    const offset = Math.max(0, mergedDuration - fade)
+    const outV = `v${i}`
+    const outA = `a${i}`
+    filters.push(
+      `[${vLabel}][${i}:v]xfade=transition=fade:duration=${fade.toFixed(2)}:offset=${offset.toFixed(2)}[${outV}]`,
+    )
+    filters.push(`[${aLabel}][${i}:a]acrossfade=d=${fade.toFixed(2)}[${outA}]`)
+    vLabel = outV
+    aLabel = outA
+    mergedDuration = mergedDuration + durations[i] - fade
+  }
+
+  await ffmpeg([
+    ...inputs,
+    '-filter_complex',
+    filters.join(';'),
+    '-map',
+    `[${vLabel}]`,
+    '-map',
+    `[${aLabel}]`,
+    ...VIDEO_ARGS,
+    outPath,
+  ])
 }
