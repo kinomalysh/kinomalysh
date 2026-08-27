@@ -1,0 +1,8 @@
+[Unit]
+Description=Kinomalysh database backup to S3
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/kinomalysh/app/infra/backup-db.sh
+User=root

@@ -138,33 +138,39 @@ Referrer-Policy, Permissions-Policy. Логи — `/var/log/caddy/access.log`, J
 HSTS **без `preload`** сознательно: preload практически необратим, а домен новый.
 Включать только когда всё встанет на HTTPS окончательно.
 
-Раздаётся статика фронта из `/srv/kinomalysh/web` — 56 пререндеренных страниц.
-API (`apps/api`) ещё не развёрнут; когда поднимем, добавить в `Caddyfile`
-`handle /api/* { reverse_proxy localhost:3001 }` **до** блока `try_files`.
+Раздаётся статика фронта из `/srv/kinomalysh/web` - пререндеренные страницы, включая
+служебные (`/auth`, `/library`, `/profile`, `/payment-result`) с `noindex` в разметке:
+так у клиентских экранов нет расхождения гидратации и в индекс они не попадают.
+`/api/*` проксируется на `localhost:3001` **до** блока `try_files`.
+
+**CSP пускает S3.** Готовые мультфильмы отдаются подписанными ссылками с
+`s3.twcstorage.ru`, поэтому в политике основного домена стоят `img-src 'self' data: https:`
+и `media-src 'self' https: blob:`. Со старым `img-src 'self' data:` и без `media-src`
+плеер на странице заказа не проигрывал бы ничего.
 
 ### Решения по конфигу, которые легко сломать по незнанию
 
-**`try_files {path} {path}/index.html /index.html` — без `{path}/`.** Если вернуть
+**`try_files {path} {path}/index.html /index.html` - без `{path}/`.** Если вернуть
 `{path}/`, Caddy начнёт редиректить `/create` → `/create/` (308). А `canonical` и все
-56 ссылок в `sitemap.xml` записаны **без** слэша — получится, что каждый URL из карты
+56 ссылок в `sitemap.xml` записаны **без** слэша - получится, что каждый URL из карты
 сайта отдаёт редирект и не совпадает с каноническим. Это прямой удар по индексации.
 
-**`script-src` содержит `'unsafe-inline'`** — вынужденно: на страницах есть
+**`script-src` содержит `'unsafe-inline'`** - вынужденно: на страницах есть
 `<script type="application/ld+json">` со Schema.org-разметкой, а браузеры режут её
 обычным `script-src 'self'`. Убрать `'unsafe-inline'` можно будет только когда фронт
 начнёт отдаваться Node-сервером с per-request nonce. Пока это осознанный долг:
 `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'` и `form-action 'self'`
 на месте и закрывают основное.
 
-**`style-src`/`font-src` пускают Google Fonts** — сайт грузит Kurale, Golos Text и
+**`style-src`/`font-src` пускают Google Fonts** - сайт грузит Kurale, Golos Text и
 Neucha с `fonts.googleapis.com`. Без этих исключений вёрстка падает на системные шрифты.
 Правильнее шрифты самохостить: минус внешний домен из CSP, минус два TLS-рукопожатия.
 
-**`admin localhost:2019` — не выключать.** С `admin off` перестаёт работать
+**`admin localhost:2019` - не выключать.** С `admin off` перестаёт работать
 `systemctl reload` (он ходит именно в этот API), и конфиг можно менять только полным
 рестартом с обрывом соединений. Порт слушается только на localhost и закрыт ufw.
 
-Грабли: **не запускайте `caddy` под `sudo` вручную** — он создаст
+Грабли: **не запускайте `caddy` под `sudo` вручную** - он создаст
 `/var/log/caddy/access.log` от `root:root 600`, и сервис потом не сможет в него писать,
 reload упадёт с `permission denied`. Лечится
 `sudo chown caddy:caddy /var/log/caddy/access.log`.
@@ -235,15 +241,64 @@ ssh kinomalysh 'cd /srv/kinomalysh/app && npm run admin:create -w apps/api -- <l
 Собирает `apps/admin`, валидирует Caddyfile до подмены, льёт `dist/` в
 `/srv/kinomalysh/admin`, перезагружает Caddy, проверяет 200 на `https://admin.kinomalysh.ru/`.
 
+## Хранение и удаление данных
+
+Обещания на сайте и в политике теперь исполняются кодом, а не на словах.
+
+Воркер держит очередь `housekeeping` с повторяемой задачей раз в час
+(`apps/worker/src/housekeeping.ts`):
+
+- фото заказа удаляется с диска через **7 дней** после создания, в базе ставится
+  `stories.photo_purged_at`;
+- готовый мультфильм живёт **30 дней**: `stories.expires_at` проставляется в момент
+  сборки, по истечении объект стирается из S3, статус переходит в `expired`;
+- заодно чистятся протухшие refresh-токены и коды подтверждения почты.
+
+Оплатить заказ, у которого фото уже стёрли, нельзя - API отдаёт 409 и просит
+оформить заказ заново. Пользователь может удалить заказ сам (`DELETE /stories/:id`)
+и весь аккаунт целиком (`DELETE /me`) - вместе с фото и файлами в S3.
+
+Согласия фиксируются при оформлении: `consent_version` и `consent_at` в `stories`,
+оба чекбокса обязательны на стороне API, а не только в интерфейсе.
+
+## Бэкапы базы
+
+`infra/backup-db.sh` - `pg_dump | gzip` в `s3://<бакет>/backups/db/`, хранение 14 дней.
+Запуск по таймеру:
+
+```bash
+scp infra/systemd/kinomalysh-backup.* kinomalysh:/tmp/
+ssh kinomalysh 'sudo install -m644 /tmp/kinomalysh-backup.* /etc/systemd/system/ && \
+  sudo systemctl daemon-reload && sudo systemctl enable --now kinomalysh-backup.timer'
+```
+
+Скрипту нужен `awscli` на сервере и права чтения `/etc/kinomalysh/{db,s3}.env`.
+Проверить разово: `sudo systemctl start kinomalysh-backup && journalctl -u kinomalysh-backup -n 20`.
+
+## Миграции
+
+Порядок применения - по номеру файла:
+
+```bash
+ssh kinomalysh 'set -a; . /etc/kinomalysh/db.env; set +a; \
+  for f in /srv/kinomalysh/app/infra/migrations/*.sql; do \
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done'
+```
+
+Все миграции идемпотентны. `drizzle-kit push` на проде не использовать - молча не
+применяет изменения (см. историю грабель ниже).
+
 ## Что ещё не сделано
 
-- [x] Делегирование на Timeweb — зона авторитетна
-- [x] Caddyfile под домен, выпуск SSL — готово, см. раздел выше
-- [x] S3-хранилище — готово, см. раздел выше
+- [x] Делегирование на Timeweb - зона авторитетна
+- [x] Caddyfile под домен, выпуск SSL
+- [x] S3-хранилище
+- [x] systemd-юниты для `api` и `worker`
+- [x] Выкладка кода и миграции базы
+- [x] Бэкапы: `pg_dump` в S3 по таймеру
+- [x] Удаление фото через 7 дней и результатов через 30
 - [ ] Добавить AAAA-запись на `2a03:6f00:a::2:d38c`
-- [ ] Отдача роликов через CDN + presigned-ссылки в коде
-- [ ] systemd-юниты для `api` и `worker`
-- [ ] Выкладка кода и миграции базы
-- [ ] Бэкапы: включить в панели + `pg_dump` в S3 по расписанию
-- [ ] Отправка почты для email-OTP: SPF, DKIM, DMARC на новом домене
+- [ ] Платежи: ключи Cashera в `api.env` (без них пополнение отдаёт 503)
+- [ ] Почта для email-OTP: `SMTP_*` в `api.env` плюс SPF, DKIM, DMARC на домене
+- [ ] Самохостинг шрифтов - убрать Google Fonts из CSP
 - [ ] Вынести воркер на Dedicated CPU, когда ffmpeg упрётся в общие ядра
