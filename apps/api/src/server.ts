@@ -45,9 +45,10 @@ async function main() {
     if (error instanceof ZodError) {
       return reply.code(400).send({ error: 'Неверные данные', details: error.flatten() })
     }
-    const status = typeof error.statusCode === 'number' ? error.statusCode : 500
+    const failure = error as { statusCode?: number; message?: string }
+    const status = typeof failure.statusCode === 'number' ? failure.statusCode : 500
     if (status >= 400 && status < 500) {
-      return reply.code(status).send({ error: error.message })
+      return reply.code(status).send({ error: failure.message ?? 'Неверный запрос' })
     }
     req.log.error(error)
     return reply.code(500).send({ error: 'Что-то пошло не так' })
