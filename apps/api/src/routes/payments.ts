@@ -1,7 +1,13 @@
 import { and, eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { payments, webhookEvents } from '@kidsstory/db'
-import { casheraWebhookSchema, getPack, PACKS, topupSchema } from '@kidsstory/shared'
+import {
+  extractCasheraEvent,
+  getPack,
+  isTestWebhook,
+  PACKS,
+  topupSchema,
+} from '@kidsstory/shared'
 import { db } from '../context.js'
 import { env, isPaymentsConfigured } from '../env.js'
 import {
@@ -100,22 +106,17 @@ export async function paymentRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: 'unauthorized' })
     }
 
-    const parsed = casheraWebhookSchema.safeParse(req.body)
-    if (!parsed.success) {
-      req.log.warn({ body: req.body }, 'cashera webhook: тело не разобрано')
+    if (isTestWebhook(req.body)) {
+      req.log.info('cashera webhook: проверочное событие')
       return reply.code(200).send({ ok: true })
     }
 
-    const raw = parsed.data
-    const payload = { ...(raw.data ?? {}), ...raw } as Record<string, unknown>
-    const uuid = typeof payload.uuid === 'string' ? payload.uuid : null
-    const externalId = typeof payload.external_id === 'string' ? payload.external_id : null
-    const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : null
-
-    if (!uuid || !status || !externalId) {
-      req.log.warn({ body: req.body, uuid, status, externalId }, 'cashera webhook: не хватает полей')
+    const event = extractCasheraEvent(req.body)
+    if (!event) {
+      req.log.warn({ body: req.body }, 'cashera webhook: не удалось прочитать событие')
       return reply.code(200).send({ ok: true })
     }
+    const { uuid, externalId, status } = event
 
     const inserted = await db
       .insert(webhookEvents)

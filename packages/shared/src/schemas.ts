@@ -49,15 +49,6 @@ export const createReelSchema = z.object({
   motionPrompt: z.string().max(2000).optional(),
 })
 
-export const casheraWebhookSchema = z.object({
-  event: z.string().optional(),
-  type: z.string().optional(),
-  data: z.record(z.unknown()).optional(),
-  uuid: z.string().optional(),
-  external_id: z.string().optional(),
-  status: z.string().optional(),
-})
-
 export type StoryStatus =
   | 'casting'
   | 'awaiting_choice'
