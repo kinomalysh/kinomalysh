@@ -1,36 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CaretRight,
   Coins,
   FileText,
-  Gift,
   Lifebuoy,
   ShieldCheck,
+  SignOut,
+  WarningCircle,
 } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
+import { Card } from '@/shared/ui/Card'
 import { cn } from '@/shared/lib/cn'
 import { formatRub, formatTokens, plural } from '@/shared/lib/format'
 import { BRAND, ROUTES } from '@/shared/config/routes'
-import { PACKS, PRICE_VIDEO_TOKENS } from '@/entities/pricing/model'
-import { useUser } from '@/entities/user/model'
-import { useLibrary } from '@/entities/story/model'
 import { asset } from '@/shared/lib/asset'
 import { useSeo } from '@/shared/lib/seo'
+import { ApiError } from '@/shared/api/client'
+import { useSession } from '@/entities/session/model'
+import {
+  deleteAccount,
+  fetchLedger,
+  fetchPacks,
+  fetchPayments,
+  LEDGER_LABELS,
+  startTopup,
+  type LedgerEntry,
+  type Pack,
+  type PaymentRecord,
+} from '@/entities/billing/model'
+
+const PRICE_VIDEO_TOKENS = 199
 
 const MENU = [
-  {
-    icon: Gift,
-    label: 'Подарочный сертификат',
-    hint: 'Подарите сказку близким',
-    chip: 'bg-poppy/15 text-poppy',
-    to: null,
-  },
   {
     icon: Lifebuoy,
     label: 'Поддержка',
     hint: 'Отвечаем быстро, по-человечески',
     chip: 'bg-mustard/20 text-mustard',
+    href: 'https://t.me/kinomalysh_help',
     to: null,
   },
   {
@@ -38,6 +46,7 @@ const MENU = [
     label: 'Пользовательское соглашение',
     hint: 'Коротко и без канцелярита',
     chip: 'bg-lilac-500/20 text-lilac-500',
+    href: null,
     to: ROUTES.terms,
   },
   {
@@ -45,6 +54,7 @@ const MENU = [
     label: 'Мои данные',
     hint: 'Что храним и как удалить',
     chip: 'bg-leaf/15 text-leaf',
+    href: null,
     to: ROUTES.privacy,
   },
 ]
@@ -52,27 +62,75 @@ const MENU = [
 export function ProfilePage() {
   useSeo('profile')
   const navigate = useNavigate()
-  const name = useUser((s) => s.name)
-  const balance = useUser((s) => s.balance)
-  const topUp = useUser((s) => s.topUp)
-  const storiesCount = useLibrary((s) => s.stories.length)
-  const [selected, setSelected] = useState<string>('pack-family')
-  const [justPaid, setJustPaid] = useState(false)
+  const status = useSession((s) => s.status)
+  const user = useSession((s) => s.user)
+  const logout = useSession((s) => s.logout)
+  const refreshUser = useSession((s) => s.refreshUser)
 
+  const [packs, setPacks] = useState<Pack[]>([])
+  const [selected, setSelected] = useState<string | null>(null)
+  const [payments, setPayments] = useState<PaymentRecord[]>([])
+  const [ledger, setLedger] = useState<LedgerEntry[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  useEffect(() => {
+    if (status === 'anon') {
+      navigate(`${ROUTES.auth}?next=${encodeURIComponent(ROUTES.profile)}`, { replace: true })
+      return
+    }
+    if (status !== 'authed') return
+    void refreshUser()
+    void fetchPacks().then((list) => {
+      setPacks(list)
+      setSelected((current) => current ?? list.find((pack) => pack.popular)?.id ?? list[0]?.id ?? null)
+    })
+    void fetchPayments().then(setPayments).catch(() => undefined)
+    void fetchLedger().then(setLedger).catch(() => undefined)
+  }, [status, navigate, refreshUser])
+
+  const balance = user?.balance ?? 0
   const filmsLeft = Math.floor(balance / PRICE_VIDEO_TOKENS)
   const balanceNote =
     filmsLeft > 0
       ? `хватит на ${filmsLeft} ${plural(filmsLeft, 'мультфильм', 'мультфильма', 'мультфильмов')}`
-      : balance >= 25
-        ? 'хватит на книгу с озвучкой'
-        : 'пора подсыпать волшебства'
+      : 'пора подсыпать волшебства'
 
-  const handleTopup = () => {
-    const pack = PACKS.find((p) => p.id === selected)
-    if (!pack) return
-    topUp(pack.tokens)
-    setJustPaid(true)
-    setTimeout(() => setJustPaid(false), 2500)
+  const handleTopup = async () => {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    try {
+      const { paymentUrl } = await startTopup(selected)
+      if (!paymentUrl) {
+        setError('Платёжная страница не открылась - попробуйте ещё раз')
+        return
+      }
+      window.location.href = paymentUrl
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Оплата временно недоступна')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteAccount()
+      logout()
+      navigate(ROUTES.home, { replace: true })
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Не удалось удалить аккаунт')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (status !== 'authed' || !user) {
+    return <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
   }
 
   return (
@@ -80,12 +138,13 @@ export function ProfilePage() {
       <section aria-label="Читательский билет" className="pt-2">
         <div className="sticker rotate-[-0.8deg] rounded-3xl p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="hand-note text-lg rotate-[-1deg]">
+            <p className="hand-note rotate-[-1deg] text-lg">
               читательский билет {BRAND.toLowerCase()}а
             </p>
             <img src={asset('logo-wordmark.png')} alt={BRAND} className="h-7 w-auto shrink-0" />
           </div>
-          <p className="mt-1 font-display text-2xl text-ink-900">{name}</p>
+          <p className="mt-1 font-display text-2xl text-ink-900">{user.name}</p>
+          <p className="text-xs text-ink-500">{user.email}</p>
           <div className="mt-4 border-t-2 border-dashed border-ink-900/15 pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="flex items-center gap-2">
@@ -94,23 +153,20 @@ export function ProfilePage() {
               </span>
               <span className="hand-note text-base">{balanceNote}</span>
             </div>
-            <p className="mt-2 text-xs text-ink-500">
-              На полке {storiesCount} {plural(storiesCount, 'сказка', 'сказки', 'сказок')} · токены
-              не сгорают
-            </p>
+            <p className="mt-2 text-xs text-ink-500">Токены не сгорают</p>
           </div>
         </div>
       </section>
 
       <section aria-labelledby="topup-heading" className="space-y-4">
         <div className="flex items-baseline gap-3">
-          <span className="hand-note shrink-0 text-lg rotate-[-2deg]">запасы</span>
+          <span className="hand-note shrink-0 rotate-[-2deg] text-lg">запасы</span>
           <h2 id="topup-heading" className="font-display text-xl text-ink-900">
             Пополнить волшебство
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Пакеты пополнения">
-          {PACKS.map((pack, i) => (
+          {packs.map((pack, index) => (
             <button
               key={pack.id}
               type="button"
@@ -118,9 +174,9 @@ export function ProfilePage() {
               aria-checked={selected === pack.id}
               onClick={() => setSelected(pack.id)}
               className={cn(
-                'relative rounded-2xl p-4 text-left cursor-pointer transition-all duration-200',
+                'relative cursor-pointer rounded-2xl p-4 text-left transition-all duration-200',
                 selected === pack.id
-                  ? cn('sticker scale-[1.02]', i % 2 === 0 ? 'rotate-[-1deg]' : 'rotate-[1deg]')
+                  ? cn('sticker scale-[1.02]', index % 2 === 0 ? 'rotate-[-1deg]' : 'rotate-[1deg]')
                   : 'paper hover:-translate-y-0.5',
               )}
             >
@@ -136,9 +192,7 @@ export function ProfilePage() {
               <span
                 className={cn(
                   'mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold',
-                  selected === pack.id
-                    ? 'bg-mustard text-night-950'
-                    : 'bg-paper-shade text-ink-800',
+                  selected === pack.id ? 'bg-mustard text-night-950' : 'bg-paper-shade text-ink-800',
                 )}
               >
                 {formatTokens(pack.tokens)}
@@ -146,19 +200,87 @@ export function ProfilePage() {
             </button>
           ))}
         </div>
-        <Button size="lg" className="w-full" onClick={handleTopup}>
-          {justPaid ? 'Зачислено!' : 'Пополнить картой'}
+        {error && (
+          <Card className="flex items-start gap-3 p-4">
+            <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-berry" />
+            <p className="text-sm text-ink-800">{error}</p>
+          </Card>
+        )}
+        <Button
+          size="lg"
+          className="w-full"
+          disabled={!selected}
+          loading={busy}
+          onClick={() => void handleTopup()}
+        >
+          Пополнить картой
         </Button>
       </section>
 
+      {ledger.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-display text-xl text-ink-900">История токенов</h2>
+          <ul className="space-y-2">
+            {ledger.slice(0, 10).map((entry) => (
+              <li
+                key={entry.id}
+                className="paper flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+              >
+                <span className="text-sm text-ink-800">
+                  {LEDGER_LABELS[entry.kind] ?? entry.kind}
+                </span>
+                <span
+                  className={cn(
+                    'font-semibold',
+                    entry.delta > 0 ? 'text-leaf' : 'text-ink-900',
+                  )}
+                >
+                  {entry.delta > 0 ? '+' : ''}
+                  {entry.delta}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {payments.some((payment) => payment.status === 'pending') && (
+        <section className="space-y-3">
+          <h2 className="font-display text-xl text-ink-900">Незавершённые платежи</h2>
+          {payments
+            .filter((payment) => payment.status === 'pending')
+            .map((payment) => (
+              <Card key={payment.id} className="flex items-center justify-between gap-3 p-4">
+                <span className="text-sm text-ink-800">
+                  {formatRub(payment.amountRub)} · {formatTokens(payment.tokens)}
+                </span>
+                {payment.paymentUrl && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      window.location.href = payment.paymentUrl as string
+                    }}
+                  >
+                    Доплатить
+                  </Button>
+                )}
+              </Card>
+            ))}
+        </section>
+      )}
+
       <section aria-label="Настройки и помощь" className="space-y-3">
-        <p className="hand-note text-lg rotate-[-1deg]">мелочи, но важные</p>
+        <p className="hand-note rotate-[-1deg] text-lg">мелочи, но важные</p>
         <div className="space-y-2">
           {MENU.map((item) => (
             <button
               key={item.label}
               type="button"
-              onClick={item.to ? () => navigate(item.to) : undefined}
+              onClick={() => {
+                if (item.to) navigate(item.to)
+                else if (item.href) window.open(item.href, '_blank', 'noopener,noreferrer')
+              }}
               className="paper flex w-full cursor-pointer items-center gap-4 rounded-3xl p-4 text-left transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0"
             >
               <span
@@ -177,6 +299,48 @@ export function ProfilePage() {
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-3 border-t-2 border-dashed border-ink-900/15 pt-6">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => {
+            logout()
+            navigate(ROUTES.home)
+          }}
+        >
+          <SignOut className="h-4 w-4" />
+          Выйти
+        </Button>
+        {confirmDelete ? (
+          <div className="space-y-2">
+            <p className="text-xs text-ink-500">
+              Удалим аккаунт, все заказы и фотографии. Отменить будет нельзя
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="danger"
+                className="flex-1"
+                loading={busy}
+                onClick={() => void handleDelete()}
+              >
+                Да, удалить
+              </Button>
+              <Button variant="ghost" className="flex-1" onClick={() => setConfirmDelete(false)}>
+                Отмена
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="w-full cursor-pointer text-center text-xs text-ink-500 underline underline-offset-4"
+          >
+            Удалить аккаунт и данные
+          </button>
+        )}
       </section>
     </div>
   )

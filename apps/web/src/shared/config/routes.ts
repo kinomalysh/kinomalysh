@@ -8,6 +8,7 @@ export const ROUTES = {
   terms: '/terms',
   privacy: '/privacy',
   auth: '/auth',
+  paymentResult: '/payment-result',
 } as const
 
 export const BRAND = 'Киномалыш'

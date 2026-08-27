@@ -10,6 +10,20 @@ export default defineConfig({
     __SITE_URL__: JSON.stringify(process.env.VITE_SITE_URL ?? 'https://kinomalysh.ru'),
   },
   plugins: [react(), tailwindcss(), seoPlugin()],
+  server: {
+    port: 5199,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_API ?? 'http://localhost:3001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/uploads': {
+        target: process.env.VITE_DEV_API ?? 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

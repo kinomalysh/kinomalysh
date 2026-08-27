@@ -3,7 +3,7 @@ import { StaticRouter } from 'react-router-dom'
 import { IconContext } from '@phosphor-icons/react'
 import { Routes } from '@/app/routes'
 
-export { PAGE_META, siteConfig, INDEXABLE_PATHS } from '@/shared/config/site'
+export { PAGE_META, siteConfig, INDEXABLE_PATHS, PRERENDER_PATHS } from '@/shared/config/site'
 
 export function render(url: string): string {
   return renderToString(

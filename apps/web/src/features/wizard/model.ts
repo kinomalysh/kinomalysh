@@ -1,102 +1,124 @@
 import { create } from 'zustand'
-import { PRICE_HERO_TOKENS, PRICE_VIDEO_TOKENS, PRICE_BOOK_TOKENS } from '@/entities/pricing/model'
-import { getPlot } from '@/entities/plot/model'
+import type { CatalogProduct } from '@/entities/catalog/model'
+import { createProductOrder, payOrder, type Order } from '@/entities/order/model'
+import { ApiError } from '@/shared/api/client'
 
-export type WizardStep = 'plot' | 'hero' | 'photo' | 'casting' | 'scenes' | 'payment' | 'done'
+export type WizardStep = 'product' | 'hero' | 'photo' | 'payment'
+export type Gender = 'male' | 'female'
 
-export const STEP_ORDER: WizardStep[] = ['photo', 'casting', 'hero', 'plot', 'scenes', 'payment', 'done']
+export const STEP_ORDER: WizardStep[] = ['product', 'hero', 'photo', 'payment']
 
-export type Gender = 'boy' | 'girl'
-export type Format = 'video' | 'book'
-
-export interface AvatarVariant {
-  id: number
-  hue: number
-  accentHue: number
+export const STEP_TITLES: Record<WizardStep, string> = {
+  product: 'Выбор мультфильма',
+  hero: 'Кто главный герой',
+  photo: 'Фотография',
+  payment: 'Оплата',
 }
 
 interface WizardState {
   step: WizardStep
-  format: Format
-  plotId: string | null
+  product: CatalogProduct | null
   childName: string
-  childAge: number | null
   gender: Gender | null
-  photoUrl: string | null
+  photo: File | null
+  photoPreview: string | null
   consentGuardian: boolean
   consentTransfer: boolean
-  castingLoading: boolean
-  avatars: AvatarVariant[]
-  chosenAvatar: number | null
-  scenesApproved: boolean
-  setFormat: (f: Format) => void
-  choosePlot: (id: string) => void
-  setHero: (patch: Partial<Pick<WizardState, 'childName' | 'childAge' | 'gender'>>) => void
-  startPhotoStep: () => void
-  setPhoto: (url: string | null) => void
+  order: Order | null
+  submitting: boolean
+  error: string | null
+  chooseProduct: (product: CatalogProduct) => void
+  setHero: (patch: { childName?: string; gender?: Gender }) => void
+  goToPhoto: () => void
+  setPhoto: (file: File | null) => void
   setConsent: (key: 'consentGuardian' | 'consentTransfer', value: boolean) => void
-  startCasting: () => void
-  recast: () => void
-  chooseAvatar: (id: number) => void
-  approveScenes: () => void
-  pay: () => void
+  submitOrder: () => Promise<Order | null>
+  pay: () => Promise<Order | null>
   goBack: () => void
+  clearError: () => void
   reset: () => void
 }
 
-function randomAvatars(): AvatarVariant[] {
-  return Array.from({ length: 3 }, (_, id) => ({
-    id,
-    hue: Math.floor(Math.random() * 360),
-    accentHue: Math.floor(Math.random() * 360),
-  }))
-}
-
 const initial = {
-  step: 'photo' as WizardStep,
-  format: 'video' as Format,
-  plotId: null,
+  step: 'product' as WizardStep,
+  product: null,
   childName: '',
-  childAge: null,
   gender: null,
-  photoUrl: null,
+  photo: null,
+  photoPreview: null,
   consentGuardian: false,
   consentTransfer: false,
-  castingLoading: false,
-  avatars: [],
-  chosenAvatar: null,
-  scenesApproved: false,
+  order: null,
+  submitting: false,
+  error: null,
+}
+
+function messageOf(error: unknown): string {
+  if (error instanceof ApiError) return error.message
+  return 'Не получилось связаться с сервером - попробуйте ещё раз'
 }
 
 export const useWizard = create<WizardState>((set, get) => ({
   ...initial,
-  setFormat: (format) => set({ format }),
-  choosePlot: (plotId) => set({ plotId, step: 'scenes' }),
+
+  chooseProduct: (product) => set({ product, step: 'hero', error: null }),
+
   setHero: (patch) => set(patch),
-  startPhotoStep: () => set({ step: 'plot' }),
-  setPhoto: (photoUrl) => set({ photoUrl }),
+
+  goToPhoto: () => set({ step: 'photo', error: null }),
+
+  setPhoto: (file) => {
+    const previous = get().photoPreview
+    if (previous) URL.revokeObjectURL(previous)
+    set({ photo: file, photoPreview: file ? URL.createObjectURL(file) : null })
+  },
+
   setConsent: (key, value) =>
     set(key === 'consentGuardian' ? { consentGuardian: value } : { consentTransfer: value }),
-  startCasting: () => {
-    set({ step: 'casting', castingLoading: true, avatars: [], chosenAvatar: null })
-    setTimeout(() => set({ castingLoading: false, avatars: randomAvatars() }), 2600)
-  },
-  recast: () => {
-    set({ castingLoading: true, avatars: [], chosenAvatar: null })
-    setTimeout(() => set({ castingLoading: false, avatars: randomAvatars() }), 2600)
-  },
-  chooseAvatar: (chosenAvatar) => set({ chosenAvatar, step: 'hero' }),
-  approveScenes: () => set({ scenesApproved: true, step: 'payment' }),
-  pay: () => set({ step: 'done' }),
-  goBack: () => {
-    const { step } = get()
-    const idx = STEP_ORDER.indexOf(step)
-    if (idx > 0) set({ step: STEP_ORDER[idx - 1] })
-  },
-  reset: () => set(initial),
-}))
 
-export function wizardPrice(state: Pick<WizardState, 'format' | 'plotId'>): number {
-  if (state.format === 'book') return PRICE_BOOK_TOKENS
-  return getPlot(state.plotId ?? '')?.premium ? PRICE_HERO_TOKENS : PRICE_VIDEO_TOKENS
-}
+  submitOrder: async () => {
+    const { product, childName, gender, photo, consentGuardian, consentTransfer } = get()
+    if (!product || !photo || !gender || !consentGuardian || !consentTransfer) return null
+    set({ submitting: true, error: null })
+    try {
+      const order = await createProductOrder({
+        slug: product.slug,
+        photo,
+        childName: childName.trim(),
+        gender,
+      })
+      set({ order, step: 'payment', submitting: false })
+      return order
+    } catch (error) {
+      set({ submitting: false, error: messageOf(error) })
+      return null
+    }
+  },
+
+  pay: async () => {
+    const order = get().order
+    if (!order) return null
+    set({ submitting: true, error: null })
+    try {
+      const paid = await payOrder(order.id)
+      set({ order: paid, submitting: false })
+      return paid
+    } catch (error) {
+      set({ submitting: false, error: messageOf(error) })
+      return null
+    }
+  },
+
+  goBack: () => {
+    const index = STEP_ORDER.indexOf(get().step)
+    if (index > 0) set({ step: STEP_ORDER[index - 1], error: null })
+  },
+
+  clearError: () => set({ error: null }),
+
+  reset: () => {
+    const preview = get().photoPreview
+    if (preview) URL.revokeObjectURL(preview)
+    set(initial)
+  },
+}))

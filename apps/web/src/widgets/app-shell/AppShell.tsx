@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Books, Moon, Sparkle, User, MagicWand } from '@phosphor-icons/react'
 import { cn } from '@/shared/lib/cn'
@@ -6,6 +7,7 @@ import { Fireflies } from '@/shared/ui/Fireflies'
 import { JsonLd } from '@/shared/ui/JsonLd'
 import { buildOrganizationLd, buildWebsiteLd } from '@/shared/lib/seo'
 import { asset } from '@/shared/lib/asset'
+import { useSession } from '@/entities/session/model'
 
 const TABS = [
   { to: ROUTES.home, label: 'Сказки', icon: Moon, end: true },
@@ -18,6 +20,11 @@ export function AppShell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const isLanding = pathname === ROUTES.home
+  const bootstrap = useSession((s) => s.bootstrap)
+
+  useEffect(() => {
+    void bootstrap()
+  }, [bootstrap])
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 md:max-w-2xl">

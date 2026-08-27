@@ -1,97 +1,201 @@
-import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, DownloadSimple, Gift, Play, ShareNetwork } from '@phosphor-icons/react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
+import { Progress } from '@/shared/ui/Progress'
 import { ROUTES } from '@/shared/config/routes'
-import { getPlot } from '@/entities/plot/model'
-import { useLibrary } from '@/entities/story/model'
 import { useSeo } from '@/shared/lib/seo'
+import { plural } from '@/shared/lib/format'
+import { api, ApiError } from '@/shared/api/client'
+import { useSession } from '@/entities/session/model'
+import {
+  fetchOrder,
+  ORDER_STAGE_LABELS,
+  payOrder,
+  type Order,
+} from '@/entities/order/model'
+
+const POLL_MS = 6000
+const LIVE_STATUSES = new Set(['rendering', 'casting'])
 
 export function StoryPage() {
-  const { id } = useParams()
+  useSeo('story')
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const story = useLibrary((s) => s.stories.find((st) => st.id === id))
-  const plot = story ? getPlot(story.plotId) : undefined
+  const status = useSession((s) => s.status)
+  const refreshUser = useSession((s) => s.refreshUser)
 
-  useSeo('story', plot ? { title: `${plot.title} — Киномалыш` } : undefined)
+  const [order, setOrder] = useState<Order | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  if (!story) {
-    return (
-      <div className="pt-16 text-center">
-        <p className="font-display text-xl text-ink-900">Сказка не найдена</p>
-        <Button variant="secondary" className="mt-6" onClick={() => navigate(ROUTES.library)}>
-          В библиотеку
-        </Button>
-      </div>
-    )
+  const load = useCallback(async () => {
+    if (!id) return
+    try {
+      setOrder(await fetchOrder(id))
+      setError(null)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Не удалось загрузить заказ')
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (status === 'anon') {
+      navigate(`${ROUTES.auth}?next=${encodeURIComponent(ROUTES.story(id ?? ''))}`, {
+        replace: true,
+      })
+      return
+    }
+    if (status === 'authed') void load()
+  }, [status, load, navigate, id])
+
+  useEffect(() => {
+    if (!order || !LIVE_STATUSES.has(order.status)) return
+    const timer = window.setInterval(() => void load(), POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [order, load])
+
+  const handlePay = async () => {
+    if (!id) return
+    setBusy(true)
+    try {
+      setOrder(await payOrder(id))
+      await refreshUser()
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Оплата не прошла')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!id) return
+    setBusy(true)
+    try {
+      const { url } = await api<{ url: string }>(`/stories/${id}/download`)
+      window.location.href = url
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Файл пока недоступен')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (status === 'loading' || (!order && !error)) {
+    return <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
   }
 
   return (
     <div className="space-y-5 pt-2 animate-rise">
-      <button
-        type="button"
-        onClick={() => navigate(ROUTES.library)}
-        className="flex cursor-pointer items-center gap-2 text-sm text-ink-800 transition-colors hover:text-ink-900"
+      <Link
+        to={ROUTES.library}
+        className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-ink-900"
       >
         <ArrowLeft className="h-4 w-4" />
-        Библиотека
-      </button>
+        В библиотеку
+      </Link>
 
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-3xl border border-ink-900/15 bg-night-900">
-        {plot && (
-          <img
-            src={plot.image}
-            alt={`Кадр из сказки «${plot.title}»`}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-        <button
-          type="button"
-          aria-label="Смотреть сказку"
-          className="relative z-10 flex h-16 w-16 cursor-pointer items-center justify-center rounded-full bg-cream text-night-950 shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-transform duration-200 hover:brightness-105 active:scale-95"
-        >
-          <Play weight="fill" className="ml-1 h-7 w-7" />
-        </button>
-        <span className="absolute bottom-4 right-4 z-10 rounded-full bg-night-950/70 px-2.5 py-1 text-[11px] text-cream">
-          {story.durationLabel}
-        </span>
-      </div>
+      {error && (
+        <Card className="flex items-start gap-3 p-4">
+          <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-berry" />
+          <p className="text-sm text-ink-800">{error}</p>
+        </Card>
+      )}
 
-      <header>
-        <h1 className="font-display text-2xl text-ink-900">{plot?.title}</h1>
-        <p className="mt-1 text-sm text-ink-800">
-          Главный герой — {story.childName} · создана {story.createdAt}
-        </p>
-      </header>
+      {order && (
+        <>
+          <header className="space-y-1">
+            <h1 className="font-display text-2xl text-ink-900">
+              {order.product?.title ?? 'Мультфильм'}
+            </h1>
+            {order.childName && (
+              <p className="text-sm text-ink-800">Главный герой - {order.childName}</p>
+            )}
+          </header>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary">
-          <DownloadSimple className="h-4 w-4" />
-          Скачать
-        </Button>
-        <Button variant="secondary">
-          <ShareNetwork className="h-4 w-4" />
-          Поделиться
-        </Button>
-      </div>
+          {order.status === 'ready' && order.resultUrl && (
+            <div className="space-y-4">
+              <video
+                src={order.resultUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full rounded-3xl border-2 border-ink-900/15 bg-night-950"
+              />
+              <Button
+                size="lg"
+                className="w-full"
+                loading={busy}
+                onClick={() => void handleDownload()}
+              >
+                <DownloadSimple className="h-5 w-5" />
+                Скачать мультфильм
+              </Button>
+              {order.daysLeft !== null && (
+                <p className="text-center text-xs text-ink-500">
+                  Файл хранится ещё {order.daysLeft}{' '}
+                  {plural(order.daysLeft, 'день', 'дня', 'дней')} - скачайте, чтобы сохранить
+                  навсегда
+                </p>
+              )}
+            </div>
+          )}
 
-      <Card className="flex items-center gap-4 p-5">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-poppy/10">
-          <Gift className="h-5 w-5 text-poppy" />
-        </span>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-ink-900">Понравилась сказка?</p>
-          <p className="text-xs text-ink-800">Подарите такую же — сертификат за минуту</p>
-        </div>
-        <Button size="sm" variant="secondary" onClick={() => navigate(ROUTES.profile)}>
-          Подарить
-        </Button>
-      </Card>
+          {order.status === 'rendering' && order.progress && (
+            <Card className="space-y-4 p-6">
+              <Progress value={order.progress.percent} label="Готовность мультфильма" />
+              <div className="space-y-1">
+                <p className="font-display text-lg text-ink-900">
+                  {ORDER_STAGE_LABELS[order.progress.stage]}
+                </p>
+                {order.progress.total > 0 && (
+                  <p className="text-sm text-ink-800">
+                    Сцена {order.progress.done} из {order.progress.total}
+                  </p>
+                )}
+                <p className="text-xs text-ink-500">
+                  Обычно занимает 10-20 минут. Страницу можно закрыть - мультфильм появится в
+                  библиотеке
+                </p>
+              </div>
+            </Card>
+          )}
 
-      <p className="rounded-2xl bg-white border border-ink-900/15 p-4 text-xs leading-relaxed text-ink-500">
-        Файл хранится ещё {story.expiresInDays} дн., потом удалится автоматически. Скачайте видео,
-        чтобы сохранить сказку навсегда.
-      </p>
+          {order.status === 'awaiting_payment' && (
+            <Card className="space-y-4 p-6">
+              <p className="text-sm text-ink-800">
+                Заказ ждёт оплаты. После списания токенов сборка начнётся сразу
+              </p>
+              <Button size="lg" className="w-full" loading={busy} onClick={() => void handlePay()}>
+                Оплатить и запустить
+              </Button>
+            </Card>
+          )}
+
+          {order.status === 'failed' && (
+            <Card className="space-y-3 p-6">
+              <p className="font-display text-lg text-ink-900">Сборка не удалась</p>
+              <p className="text-sm text-ink-800">
+                {order.failReason ?? 'Что-то пошло не так на стороне генерации'}
+              </p>
+              <p className="text-sm text-leaf">Токены вернулись на баланс автоматически</p>
+              <Button variant="secondary" onClick={() => navigate(ROUTES.create)}>
+                Попробовать снова
+              </Button>
+            </Card>
+          )}
+
+          {order.status === 'expired' && (
+            <Card className="space-y-3 p-6">
+              <p className="font-display text-lg text-ink-900">Срок хранения истёк</p>
+              <p className="text-sm text-ink-800">
+                Мы храним готовые мультфильмы 30 дней, потом удаляем файл с серверов
+              </p>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   )
 }

@@ -6,7 +6,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDir = join(root, 'dist')
 const ssrDir = join(root, 'dist-ssr')
 
-const { render, PAGE_META, siteConfig, INDEXABLE_PATHS } = await import(
+const { render, PAGE_META, siteConfig, PRERENDER_PATHS } = await import(
   join(ssrDir, 'entry-server.js')
 )
 
@@ -39,6 +39,11 @@ function buildPage(path) {
   )
   html = replaceTag(
     html,
+    /<meta name="robots"[^>]*>/,
+    `<meta name="robots" content="${meta.noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'}" />`,
+  )
+  html = replaceTag(
+    html,
     /<meta property="og:title"[^>]*>/,
     `<meta property="og:title" content="${meta.title}" />`,
   )
@@ -65,7 +70,7 @@ function buildPage(path) {
   return html.replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)
 }
 
-for (const path of INDEXABLE_PATHS) {
+for (const path of PRERENDER_PATHS) {
   const html = buildPage(path)
   const outFile = path === '/' ? join(distDir, 'index.html') : join(distDir, path, 'index.html')
   mkdirSync(dirname(outFile), { recursive: true })

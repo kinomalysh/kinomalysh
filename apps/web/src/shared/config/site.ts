@@ -89,6 +89,18 @@ export const SEO: Record<string, SeoMeta> = {
     description: 'Баланс, сертификаты и история заказов.',
     noindex: true,
   },
+  auth: {
+    path: '/auth',
+    title: 'Вход — Киномалыш',
+    description: 'Вход и регистрация в сервисе персональных мультфильмов «Киномалыш».',
+    noindex: true,
+  },
+  paymentResult: {
+    path: '/payment-result',
+    title: 'Результат оплаты — Киномалыш',
+    description: 'Статус пополнения баланса.',
+    noindex: true,
+  },
   terms: {
     path: '/terms',
     title: 'Пользовательское соглашение — Киномалыш',
@@ -104,7 +116,7 @@ export const SEO: Record<string, SeoMeta> = {
 
 export const BLOG_INDEX: SeoMeta = {
   path: '/blog',
-  title: 'Блог Огонька — о детских сказках, подарках и нейросетях',
+  title: 'Блог Киномалыша — о детских сказках, подарках и нейросетях',
   description:
     'Статьи о персональных сказках и мультфильмах: как выбрать подарок, что делать со страхом темноты и долгим засыпанием, безопасно ли загружать фото ребёнка.',
 }
@@ -125,3 +137,9 @@ export const PAGE_META: SeoMeta[] = [
 ]
 
 export const INDEXABLE_PATHS = PAGE_META.filter((page) => !page.noindex).map((page) => page.path)
+
+const APP_PATHS = Object.values(SEO)
+  .filter((page) => page.noindex && !page.path.includes(':'))
+  .map((page) => page.path)
+
+export const PRERENDER_PATHS = [...INDEXABLE_PATHS, ...APP_PATHS]
