@@ -14,6 +14,7 @@ const envSchema = z.object({
   CASHERA_API_URL: z.string().default('https://api.cashera.cash/api/v1'),
   CASHERA_API_KEY: z.string().default(''),
   CASHERA_SECRET: z.string().default(''),
+  CASHERA_RETURN_FIELD: z.string().default(''),
   SMTP_HOST: z.string().default(''),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().default(''),

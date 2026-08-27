@@ -24,11 +24,11 @@ import {
   fetchPacks,
   fetchPayments,
   LEDGER_LABELS,
-  startTopup,
   type LedgerEntry,
   type Pack,
   type PaymentRecord,
 } from '@/entities/billing/model'
+import { usePaymentWatcher } from '@/entities/billing/usePaymentWatcher'
 
 const PRICE_VIDEO_TOKENS = 199
 
@@ -74,6 +74,7 @@ export function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const topup = usePaymentWatcher(() => void refreshUser())
 
   useEffect(() => {
     if (status === 'anon') {
@@ -96,24 +97,6 @@ export function ProfilePage() {
     filmsLeft > 0
       ? `хватит на ${filmsLeft} ${plural(filmsLeft, 'мультфильм', 'мультфильма', 'мультфильмов')}`
       : 'пора подсыпать волшебства'
-
-  const handleTopup = async () => {
-    if (!selected) return
-    setBusy(true)
-    setError(null)
-    try {
-      const { paymentUrl } = await startTopup(selected)
-      if (!paymentUrl) {
-        setError('Платёжная страница не открылась - попробуйте ещё раз')
-        return
-      }
-      window.location.href = paymentUrl
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Оплата временно недоступна')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   const handleDelete = async () => {
     setBusy(true)
@@ -200,21 +183,43 @@ export function ProfilePage() {
             </button>
           ))}
         </div>
-        {error && (
+        {(error || topup.error) && (
           <Card className="flex items-start gap-3 p-4">
             <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-berry" />
-            <p className="text-sm text-ink-800">{error}</p>
+            <p className="text-sm text-ink-800">{error ?? topup.error}</p>
           </Card>
         )}
-        <Button
-          size="lg"
-          className="w-full"
-          disabled={!selected}
-          loading={busy}
-          onClick={() => void handleTopup()}
-        >
-          Пополнить картой
-        </Button>
+        {topup.state === 'waiting' ? (
+          <Card className="space-y-3 p-5 text-center">
+            <span
+              aria-hidden
+              className="mx-auto block h-8 w-8 animate-spin rounded-full border-4 border-mustard border-t-transparent"
+            />
+            <p className="text-sm text-ink-800">
+              Оплата открылась в соседней вкладке. Токены зачислятся сюда сами
+            </p>
+            <Button variant="ghost" size="sm" onClick={topup.reset}>
+              Выбрать другой пакет
+            </Button>
+          </Card>
+        ) : topup.state === 'failed' ? (
+          <Card className="space-y-3 p-5 text-center">
+            <p className="text-sm text-ink-800">Платёж не прошёл, деньги не списаны</p>
+            <Button variant="secondary" size="sm" onClick={topup.reset}>
+              Попробовать снова
+            </Button>
+          </Card>
+        ) : (
+          <Button
+            size="lg"
+            className="w-full"
+            disabled={!selected}
+            loading={topup.state === 'opening'}
+            onClick={() => selected && void topup.start(selected)}
+          >
+            Пополнить картой
+          </Button>
+        )}
       </section>
 
       {ledger.length > 0 && (

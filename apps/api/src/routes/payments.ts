@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { payments, webhookEvents } from '@kidsstory/db'
 import { casheraWebhookSchema, getPack, PACKS, topupSchema } from '@kidsstory/shared'
 import { db } from '../context.js'
-import { isPaymentsConfigured } from '../env.js'
+import { env, isPaymentsConfigured } from '../env.js'
 import {
   CasheraError,
   createCasheraPayment,
@@ -40,6 +40,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         amountMinor: payment.amountMinor,
         externalId: payment.id,
         description: `Киномалыш · ${pack.label}`,
+        returnUrl: `${env.WEB_URL}/payment-result?paymentId=${payment.id}`,
       })
       const [updated] = await db
         .update(payments)

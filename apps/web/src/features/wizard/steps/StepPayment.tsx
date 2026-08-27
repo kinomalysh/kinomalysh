@@ -5,12 +5,10 @@ import { Card } from '@/shared/ui/Card'
 import { cn } from '@/shared/lib/cn'
 import { TOKEN_TO_RUB } from '@/shared/config/routes'
 import { formatRub, formatTokens } from '@/shared/lib/format'
-import { fetchPacks, startTopup, type Pack } from '@/entities/billing/model'
+import { fetchPacks, type Pack } from '@/entities/billing/model'
+import { usePaymentWatcher } from '@/entities/billing/usePaymentWatcher'
 import { useSession } from '@/entities/session/model'
-import { ApiError } from '@/shared/api/client'
 import { useWizard } from '@/features/wizard/model'
-
-const PENDING_ORDER_KEY = 'kinomalysh.pendingOrder'
 
 interface StepPaymentProps {
   onPaid: (orderId: string) => void
@@ -27,8 +25,7 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
 
   const [packs, setPacks] = useState<Pack[]>([])
   const [selected, setSelected] = useState<string | null>(null)
-  const [topupError, setTopupError] = useState<string | null>(null)
-  const [redirecting, setRedirecting] = useState(false)
+  const topup = usePaymentWatcher(() => void refreshUser())
 
   const cost = order?.tokensCost ?? product?.priceTokens ?? 0
   const balance = user?.balance ?? 0
@@ -59,33 +56,6 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
     if (paid) {
       await refreshUser()
       onPaid(paid.id)
-    }
-  }
-
-  const handleTopup = async () => {
-    if (!selected) return
-    setTopupError(null)
-    setRedirecting(true)
-    try {
-      const { paymentUrl } = await startTopup(selected)
-      if (!paymentUrl) {
-        setTopupError('Платёжная страница не открылась - попробуйте ещё раз')
-        setRedirecting(false)
-        return
-      }
-      if (order) {
-        try {
-          window.localStorage.setItem(PENDING_ORDER_KEY, order.id)
-        } catch {
-          /* без запоминания просто вернёмся в библиотеку */
-        }
-      }
-      window.location.href = paymentUrl
-    } catch (caught) {
-      setRedirecting(false)
-      setTopupError(
-        caught instanceof ApiError ? caught.message : 'Не получилось начать оплату, попробуйте позже',
-      )
     }
   }
 
@@ -169,21 +139,44 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
               </button>
             ))}
           </div>
-          {topupError && (
+          {topup.error && (
             <Card className="flex items-start gap-3 p-4">
               <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-berry" />
-              <p className="text-sm text-ink-800">{topupError}</p>
+              <p className="text-sm text-ink-800">{topup.error}</p>
             </Card>
           )}
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={!selected}
-            loading={redirecting}
-            onClick={() => void handleTopup()}
-          >
-            Пополнить картой
-          </Button>
+          {topup.state === 'waiting' ? (
+            <Card className="space-y-3 p-5 text-center">
+              <span
+                aria-hidden
+                className="mx-auto block h-8 w-8 animate-spin rounded-full border-4 border-mustard border-t-transparent"
+              />
+              <p className="text-sm text-ink-800">
+                Оплата открылась в соседней вкладке. Как только банк подтвердит платёж, токены
+                появятся здесь сами
+              </p>
+              <Button variant="ghost" size="sm" onClick={topup.reset}>
+                Выбрать другой пакет
+              </Button>
+            </Card>
+          ) : topup.state === 'failed' ? (
+            <Card className="space-y-3 p-5 text-center">
+              <p className="text-sm text-ink-800">Платёж не прошёл, деньги не списаны</p>
+              <Button variant="secondary" size="sm" onClick={topup.reset}>
+                Попробовать снова
+              </Button>
+            </Card>
+          ) : (
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={!selected}
+              loading={topup.state === 'opening'}
+              onClick={() => selected && void topup.start(selected)}
+            >
+              Пополнить картой
+            </Button>
+          )}
         </section>
       )}
     </div>

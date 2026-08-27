@@ -24,6 +24,7 @@ interface CreatePaymentInput {
   paymentMethod?: string
   externalId: string
   description: string
+  returnUrl?: string
 }
 
 export async function createCasheraPayment(input: CreatePaymentInput): Promise<CasheraTransaction> {
@@ -39,6 +40,9 @@ export async function createCasheraPayment(input: CreatePaymentInput): Promise<C
       payment_method: input.paymentMethod ?? 'sbp',
       external_id: input.externalId,
       description: input.description,
+      ...(env.CASHERA_RETURN_FIELD && input.returnUrl
+        ? { [env.CASHERA_RETURN_FIELD]: input.returnUrl }
+        : {}),
     }),
   })
 
