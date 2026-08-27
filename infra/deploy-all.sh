@@ -23,7 +23,8 @@ ssh -o ConnectTimeout=10 -o BatchMode=yes "$HOST" 'echo ok' >/dev/null \
 ok "$HOST отвечает"
 
 step "Код и сборка бэкенда"
-ssh "$HOST" "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BRANCH && git pull --quiet --ff-only && \
+ssh "$HOST" "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BRANCH && \
+  git reset --quiet --hard origin/$BRANCH && \
   npm install --silent && \
   npm run build -w packages/shared -w packages/db -w packages/storage -w apps/api -w apps/worker" \
   || die "сборка на сервере упала"
