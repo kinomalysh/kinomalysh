@@ -20,6 +20,10 @@ const envSchema = z.object({
   SMTP_USER: z.string().default(''),
   SMTP_PASS: z.string().default(''),
   SMTP_FROM: z.string().default('Киномалыш <hello@kinomalysh.ru>'),
+  SMTP_IPV6: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 })
 
 export const env = envSchema.parse(process.env)

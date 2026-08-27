@@ -1,28 +1,61 @@
+import { promises as dns } from 'node:dns'
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { env } from '../env.js'
 
+type TransportOptions = Parameters<typeof nodemailer.createTransport>[0]
+
+const CONNECTION_TIMEOUT_MS = 10_000
+const GREETING_TIMEOUT_MS = 10_000
+const SOCKET_TIMEOUT_MS = 20_000
+
 let transporter: Transporter | null = null
 
-function getTransporter(): Transporter | null {
+async function buildTransportOptions(): Promise<TransportOptions> {
+  const options: Record<string, unknown> = {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    requireTLS: env.SMTP_PORT !== 465,
+    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    connectionTimeout: CONNECTION_TIMEOUT_MS,
+    greetingTimeout: GREETING_TIMEOUT_MS,
+    socketTimeout: SOCKET_TIMEOUT_MS,
+  }
+
+  if (env.SMTP_IPV6) {
+    const [address] = await dns.resolve6(env.SMTP_HOST)
+    if (!address) throw new Error(`у ${env.SMTP_HOST} нет AAAA-записи`)
+    options.host = address
+    options.tls = { servername: env.SMTP_HOST }
+  }
+
+  return options as TransportOptions
+}
+
+async function getTransporter(): Promise<Transporter | null> {
   if (!env.SMTP_HOST) return null
   if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-    })
+    transporter = nodemailer.createTransport(await buildTransportOptions())
   }
   return transporter
 }
 
 export async function sendOtpEmail(to: string, name: string, code: string) {
-  const mailer = getTransporter()
+  const mailer = await getTransporter()
   if (!mailer) {
     console.log(`[mailer] SMTP не настроен — код для ${to}: ${code}`)
     return
   }
+  try {
+    await deliver(mailer, to, name, code)
+  } catch (error) {
+    transporter = null
+    throw error
+  }
+}
+
+async function deliver(mailer: Transporter, to: string, name: string, code: string) {
   await mailer.sendMail({
     from: env.SMTP_FROM,
     to,
