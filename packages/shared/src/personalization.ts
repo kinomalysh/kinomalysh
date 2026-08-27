@@ -20,12 +20,21 @@ export function hasNamePlaceholder(text: string | null | undefined): boolean {
   return new RegExp(PLACEHOLDER_SOURCE).test(text)
 }
 
+const AFTER_HISSING_NO_Y = /([жчшщкгх])ы/g
+const HISSING_INSTRUMENTAL = /([жчшщ])ой$/
+
+export function fixRussianSpelling(word: string): string {
+  return word
+    .replace(AFTER_HISSING_NO_Y, (_match, consonant: string) => `${consonant}и`)
+    .replace(HISSING_INSTRUMENTAL, (_match, consonant: string) => `${consonant}ей`)
+}
+
 export function declineName(name: string, ruCase: string, gender: ChildGender): string {
   const target = CASES[ruCase]
   if (!target || target === 'nominative') return name
   try {
     const declined = petrovich({ first: name, gender }, target)
-    return declined.first || name
+    return declined.first ? fixRussianSpelling(declined.first) : name
   } catch {
     return name
   }
