@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
+import { Chip } from '@/shared/ui/Chip'
 import { cn } from '@/shared/lib/cn'
 import { formatRub, formatTokens, plural } from '@/shared/lib/format'
 import { BRAND, ROUTES } from '@/shared/config/routes'
@@ -24,7 +25,9 @@ import {
   fetchPacks,
   fetchPayments,
   LEDGER_LABELS,
+  PAYMENT_METHODS,
   type LedgerEntry,
+  type PaymentMethod,
   type Pack,
   type PaymentRecord,
 } from '@/entities/billing/model'
@@ -69,6 +72,7 @@ export function ProfilePage() {
 
   const [packs, setPacks] = useState<Pack[]>([])
   const [selected, setSelected] = useState<string | null>(null)
+  const [method, setMethod] = useState<PaymentMethod>('sbp')
   const [payments, setPayments] = useState<PaymentRecord[]>([])
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -183,6 +187,22 @@ export function ProfilePage() {
             </button>
           ))}
         </div>
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-semibold text-ink-800">Чем платим</legend>
+          <div className="flex gap-2">
+            {PAYMENT_METHODS.map((option) => (
+              <Chip
+                key={option.id}
+                active={method === option.id}
+                className="flex-1 flex-col gap-0 py-2 h-auto"
+                onClick={() => setMethod(option.id)}
+              >
+                <span>{option.label}</span>
+                <span className="text-[10px] font-normal opacity-70">{option.hint}</span>
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
         {(error || topup.error) && (
           <Card className="flex items-start gap-3 p-4">
             <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-berry" />
@@ -215,9 +235,9 @@ export function ProfilePage() {
             className="w-full"
             disabled={!selected}
             loading={topup.state === 'opening'}
-            onClick={() => selected && void topup.start(selected)}
+            onClick={() => selected && void topup.start(selected, method)}
           >
-            Пополнить картой
+            Пополнить через СБП
           </Button>
         )}
       </section>

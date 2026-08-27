@@ -21,10 +21,12 @@ export class CasheraError extends Error {
 interface CreatePaymentInput {
   amountMinor: number
   currency?: string
-  paymentMethod?: string
+  paymentMethod: string
   externalId: string
   description: string
-  returnUrl?: string
+  successUrl: string
+  failUrl: string
+  callbackUrl: string
 }
 
 export async function createCasheraPayment(input: CreatePaymentInput): Promise<CasheraTransaction> {
@@ -32,17 +34,18 @@ export async function createCasheraPayment(input: CreatePaymentInput): Promise<C
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
       'X-Api-Key': env.CASHERA_API_KEY,
     },
     body: JSON.stringify({
       amount: input.amountMinor,
       currency: input.currency ?? 'RUB',
-      payment_method: input.paymentMethod ?? 'sbp',
+      payment_method: input.paymentMethod,
       external_id: input.externalId,
       description: input.description,
-      ...(env.CASHERA_RETURN_FIELD && input.returnUrl
-        ? { [env.CASHERA_RETURN_FIELD]: input.returnUrl }
-        : {}),
+      success_url: input.successUrl,
+      fail_url: input.failUrl,
+      callback_url: input.callbackUrl,
     }),
   })
 

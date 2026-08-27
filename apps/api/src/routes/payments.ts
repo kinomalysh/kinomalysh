@@ -36,11 +36,15 @@ export async function paymentRoutes(app: FastifyInstance) {
       .returning()
 
     try {
+      const resultUrl = `${env.WEB_URL}/payment-result?paymentId=${payment.id}`
       const tx = await createCasheraPayment({
         amountMinor: payment.amountMinor,
         externalId: payment.id,
         description: `Киномалыш · ${pack.label}`,
-        returnUrl: `${env.WEB_URL}/payment-result?paymentId=${payment.id}`,
+        paymentMethod: body.method,
+        successUrl: resultUrl,
+        failUrl: `${resultUrl}&failed=1`,
+        callbackUrl: `${env.WEB_URL}/api/payments/cashera/webhook`,
       })
       const [updated] = await db
         .update(payments)

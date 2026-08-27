@@ -1,5 +1,18 @@
 import { api } from '@/shared/api/client'
 
+export type PaymentMethod = 'sbp' | 'card'
+
+export interface PaymentMethodOption {
+  id: PaymentMethod
+  label: string
+  hint: string
+}
+
+export const PAYMENT_METHODS: PaymentMethodOption[] = [
+  { id: 'sbp', label: 'СБП', hint: 'через приложение банка' },
+  { id: 'card', label: 'Карта', hint: 'Visa, Mastercard, МИР' },
+]
+
 export interface Pack {
   id: string
   rub: number
@@ -41,8 +54,9 @@ export async function fetchPacks(): Promise<Pack[]> {
 
 export async function startTopup(
   packId: string,
+  paymentMethod: PaymentMethod,
 ): Promise<{ paymentId: string; paymentUrl: string | null }> {
-  return api('/payments/topup', { method: 'POST', body: { packId } })
+  return api('/payments/topup', { method: 'POST', body: { packId, method: paymentMethod } })
 }
 
 export async function fetchPaymentStatus(

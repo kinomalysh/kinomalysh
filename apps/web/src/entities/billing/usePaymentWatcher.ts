@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '@/shared/api/client'
-import { fetchPaymentStatus, startTopup } from './model'
+import { fetchPaymentStatus, startTopup, type PaymentMethod } from './model'
 
 export type PaymentWatchState = 'idle' | 'opening' | 'waiting' | 'succeeded' | 'failed'
 
@@ -36,12 +36,12 @@ export function usePaymentWatcher(onSucceeded: () => void) {
     }
   }, [paymentId, state])
 
-  const start = useCallback(async (packId: string) => {
+  const start = useCallback(async (packId: string, paymentMethod: PaymentMethod) => {
     setError(null)
     setState('opening')
     const paymentWindow = window.open('', '_blank', 'noopener,noreferrer')
     try {
-      const { paymentId: id, paymentUrl } = await startTopup(packId)
+      const { paymentId: id, paymentUrl } = await startTopup(packId, paymentMethod)
       if (!paymentUrl) {
         paymentWindow?.close()
         setState('idle')

@@ -76,7 +76,7 @@ export function PaymentResultPage() {
             <WarningCircle weight="fill" className="mx-auto h-12 w-12 text-berry" />
             <h1 className="font-display text-2xl text-ink-900">Платёж не прошёл</h1>
             <p className="text-sm text-ink-800">
-              Деньги не списаны. Попробуйте ещё раз или другой картой
+              Деньги не списаны. Попробуйте оплатить ещё раз
             </p>
             <Button size="lg" className="w-full" onClick={() => navigate(ROUTES.profile)}>
               Попробовать снова

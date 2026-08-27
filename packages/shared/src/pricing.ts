@@ -33,3 +33,16 @@ export function storyPrice(format: 'video' | 'book', premium: boolean): number {
   if (format === 'book') return PRICE_BOOK_TOKENS
   return premium ? PRICE_HERO_TOKENS : PRICE_VIDEO_TOKENS
 }
+
+export type PaymentMethod = 'sbp' | 'card'
+
+export interface PaymentMethodOption {
+  id: PaymentMethod
+  label: string
+  hint: string
+}
+
+export const PAYMENT_METHODS: PaymentMethodOption[] = [
+  { id: 'sbp', label: 'СБП', hint: 'Через приложение банка' },
+  { id: 'card', label: 'Карта', hint: 'Visa, Mastercard, МИР' },
+]

@@ -25,6 +25,7 @@ export const chooseAvatarSchema = z.object({
 
 export const topupSchema = z.object({
   packId: z.string().min(1),
+  method: z.enum(['sbp', 'card']).default('sbp'),
 })
 
 export const adminLoginSchema = z.object({
