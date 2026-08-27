@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { payments, webhookEvents } from '@kidsstory/db'
 import { casheraWebhookSchema, getPack, PACKS, topupSchema } from '@kidsstory/shared'
@@ -8,6 +8,7 @@ import {
   CasheraError,
   createCasheraPayment,
   FAIL_STATUSES,
+  getCasheraTransaction,
   SUCCESS_STATUSES,
   verifyWebhookAuth,
 } from '../lib/cashera.js'
@@ -70,12 +71,27 @@ export async function paymentRoutes(app: FastifyInstance) {
   })
 
   app.get('/payments/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const payment = await db.query.payments.findFirst({
+    let payment = await db.query.payments.findFirst({
       where: eq(payments.id, (req.params as { id: string }).id),
     })
     if (!payment || payment.userId !== req.userId) {
       return reply.code(404).send({ error: 'Платёж не найден' })
     }
+
+    if (payment.status === 'pending' && payment.casheraUuid) {
+      const remote = await getCasheraTransaction(payment.casheraUuid).catch(() => null)
+      if (remote) {
+        const settled = await settlePayment(payment, remote.status.toLowerCase())
+        if (settled) {
+          req.log.info(
+            { paymentId: payment.id, status: remote.status },
+            'payment reconciled from cashera',
+          )
+          payment = (await db.query.payments.findFirst({ where: eq(payments.id, payment.id) }))!
+        }
+      }
+    }
+
     return { id: payment.id, status: payment.status, tokens: payment.tokens }
   })
 
@@ -85,7 +101,10 @@ export async function paymentRoutes(app: FastifyInstance) {
     }
 
     const parsed = casheraWebhookSchema.safeParse(req.body)
-    if (!parsed.success) return reply.code(200).send({ ok: true })
+    if (!parsed.success) {
+      req.log.warn({ body: req.body }, 'cashera webhook: тело не разобрано')
+      return reply.code(200).send({ ok: true })
+    }
 
     const raw = parsed.data
     const payload = { ...(raw.data ?? {}), ...raw } as Record<string, unknown>
@@ -93,7 +112,10 @@ export async function paymentRoutes(app: FastifyInstance) {
     const externalId = typeof payload.external_id === 'string' ? payload.external_id : null
     const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : null
 
-    if (!uuid || !status || !externalId) return reply.code(200).send({ ok: true })
+    if (!uuid || !status || !externalId) {
+      req.log.warn({ body: req.body, uuid, status, externalId }, 'cashera webhook: не хватает полей')
+      return reply.code(200).send({ ok: true })
+    }
 
     const inserted = await db
       .insert(webhookEvents)
@@ -108,20 +130,37 @@ export async function paymentRoutes(app: FastifyInstance) {
       return reply.code(200).send({ ok: true })
     }
 
-    if (SUCCESS_STATUSES.has(status) && !payment.credited) {
-      await db
-        .update(payments)
-        .set({ status: 'succeeded', credited: true, updatedAt: new Date() })
-        .where(eq(payments.id, payment.id))
-      await creditTokens(db, payment.userId, payment.tokens, { paymentId: payment.id })
-      req.log.info({ paymentId: payment.id, tokens: payment.tokens }, 'payment credited')
-    } else if (FAIL_STATUSES.has(status) && payment.status === 'pending') {
-      await db
-        .update(payments)
-        .set({ status: 'failed', updatedAt: new Date() })
-        .where(eq(payments.id, payment.id))
+    const settled = await settlePayment(payment, status)
+    if (settled) {
+      req.log.info({ paymentId: payment.id, status, tokens: payment.tokens }, 'payment settled')
     }
 
     return reply.code(200).send({ ok: true })
   })
+}
+
+async function settlePayment(
+  payment: typeof payments.$inferSelect,
+  status: string,
+): Promise<boolean> {
+  if (SUCCESS_STATUSES.has(status)) {
+    const [claimed] = await db
+      .update(payments)
+      .set({ status: 'succeeded', credited: true, updatedAt: new Date() })
+      .where(and(eq(payments.id, payment.id), eq(payments.credited, false)))
+      .returning()
+    if (!claimed) return false
+    await creditTokens(db, payment.userId, payment.tokens, { paymentId: payment.id })
+    return true
+  }
+
+  if (FAIL_STATUSES.has(status) && payment.status === 'pending') {
+    await db
+      .update(payments)
+      .set({ status: 'failed', updatedAt: new Date() })
+      .where(and(eq(payments.id, payment.id), eq(payments.status, 'pending')))
+    return true
+  }
+
+  return false
 }
