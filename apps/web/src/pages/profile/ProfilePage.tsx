@@ -341,7 +341,7 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="w-full cursor-pointer text-center text-xs text-ink-500 underline underline-offset-4"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center text-xs text-ink-500 underline underline-offset-4"
           >
             Удалить аккаунт и данные
           </button>

@@ -31,7 +31,7 @@ export function AppShell() {
       <JsonLd data={buildOrganizationLd()} />
       <JsonLd data={buildWebsiteLd()} />
       <Fireflies />
-      <header className="sticky top-0 z-30 -mx-4 mb-2 border-b-2 border-dashed border-ink-900/15 bg-paper/95 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 backdrop-blur-sm">
+      <header className="chrome-surface sticky top-0 z-30 -mx-4 mb-2 border-b-2 border-dashed border-ink-900/15 px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="flex items-center justify-between gap-4">
           <NavLink
             to={ROUTES.home}

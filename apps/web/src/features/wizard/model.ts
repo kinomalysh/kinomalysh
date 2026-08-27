@@ -8,6 +8,8 @@ export type Gender = 'male' | 'female'
 
 export const STEP_ORDER: WizardStep[] = ['product', 'hero', 'photo', 'payment']
 
+export type StepDirection = 'forward' | 'back'
+
 export const STEP_TITLES: Record<WizardStep, string> = {
   product: 'Выбор мультфильма',
   hero: 'Кто главный герой',
@@ -17,6 +19,7 @@ export const STEP_TITLES: Record<WizardStep, string> = {
 
 interface WizardState {
   step: WizardStep
+  direction: StepDirection
   product: CatalogProduct | null
   childName: string
   gender: Gender | null
@@ -41,6 +44,7 @@ interface WizardState {
 
 const initial = {
   step: 'product' as WizardStep,
+  direction: 'forward' as StepDirection,
   product: null,
   childName: '',
   gender: null,
@@ -61,11 +65,12 @@ function messageOf(error: unknown): string {
 export const useWizard = create<WizardState>((set, get) => ({
   ...initial,
 
-  chooseProduct: (product) => set({ product, step: 'hero', error: null }),
+  chooseProduct: (product) =>
+    set({ product, step: 'hero', direction: 'forward', error: null }),
 
   setHero: (patch) => set(patch),
 
-  goToPhoto: () => set({ step: 'photo', error: null }),
+  goToPhoto: () => set({ step: 'photo', direction: 'forward', error: null }),
 
   setPhoto: (file) => {
     const previous = get().photoPreview
@@ -87,7 +92,7 @@ export const useWizard = create<WizardState>((set, get) => ({
         childName: childName.trim(),
         gender,
       })
-      set({ order, step: 'payment', submitting: false })
+      set({ order, step: 'payment', direction: 'forward', submitting: false })
       return order
     } catch (error) {
       set({ submitting: false, error: messageOf(error) })
@@ -111,7 +116,7 @@ export const useWizard = create<WizardState>((set, get) => ({
 
   goBack: () => {
     const index = STEP_ORDER.indexOf(get().step)
-    if (index > 0) set({ step: STEP_ORDER[index - 1], error: null })
+    if (index > 0) set({ step: STEP_ORDER[index - 1], direction: 'back', error: null })
   },
 
   clearError: () => set({ error: null }),

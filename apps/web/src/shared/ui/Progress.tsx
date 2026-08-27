@@ -12,11 +12,11 @@ export function Progress({ value, label }: ProgressProps) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className="h-2 w-full overflow-hidden rounded-full bg-paper-shade"
+      className="relative h-2 w-full overflow-hidden rounded-full bg-paper-shade"
     >
       <div
-        className="h-full rounded-full bg-poppy transition-[width] duration-700 ease-out"
-        style={{ width: `${clamped}%` }}
+        className="absolute inset-0 rounded-full bg-poppy transition-transform duration-700 ease-out will-change-transform"
+        style={{ transform: `translate3d(${clamped - 100}%, 0, 0)` }}
       />
     </div>
   )

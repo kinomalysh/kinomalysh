@@ -165,7 +165,7 @@ export function AuthPage() {
         {mode === 'login' && (
           <button
             type="button"
-            className="cursor-pointer text-ink-800 underline underline-offset-4"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center px-3 text-ink-800 underline underline-offset-4"
             onClick={() => {
               setMode('register')
               setError(null)
@@ -177,7 +177,7 @@ export function AuthPage() {
         {mode === 'register' && (
           <button
             type="button"
-            className="cursor-pointer text-ink-800 underline underline-offset-4"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center px-3 text-ink-800 underline underline-offset-4"
             onClick={() => {
               setMode('login')
               setError(null)
@@ -189,7 +189,7 @@ export function AuthPage() {
         {mode === 'verify' && (
           <button
             type="button"
-            className="cursor-pointer text-ink-800 underline underline-offset-4"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center px-3 text-ink-800 underline underline-offset-4"
             onClick={() =>
               void run(async () => {
                 await resend(email.trim())

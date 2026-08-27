@@ -64,25 +64,35 @@
 
   --text-xs: 0.786rem;
   --text-xs--line-height: 1.4;
+  --text-xs--letter-spacing: 0.012em;
   --text-sm: 0.889rem;
   --text-sm--line-height: 1.55;
+  --text-sm--letter-spacing: 0.006em;
   --text-base: 1rem;
   --text-base--line-height: 1.618;
   --text-lg: 1.272rem;
   --text-lg--line-height: 1.35;
+  --text-lg--letter-spacing: -0.008em;
   --text-xl: 1.618rem;
   --text-xl--line-height: 1.25;
+  --text-xl--letter-spacing: -0.014em;
   --text-2xl: 2.058rem;
   --text-2xl--line-height: 1.2;
+  --text-2xl--letter-spacing: -0.018em;
   --text-3xl: 2.618rem;
   --text-3xl--line-height: 1.15;
+  --text-3xl--letter-spacing: -0.022em;
   --text-4xl: 3.33rem;
   --text-4xl--line-height: 1.1;
+  --text-4xl--letter-spacing: -0.026em;
 
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
 
   --animate-rise: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-step-forward: stepForward 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-step-back: stepBack 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-calm-fade: calmFade 0.2s ease-out both;
   --animate-twinkle: twinkle 4s ease-in-out infinite;
   --animate-sway: sway 7s ease-in-out infinite;
   --animate-floaty: floaty 9s ease-in-out infinite;
@@ -103,6 +113,48 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+  @keyframes stepForward {
+    from {
+      opacity: 0;
+      transform: translate3d(18px, 6px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes stepBack {
+    from {
+      opacity: 0;
+      transform: translate3d(-18px, 6px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes calmFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes statusSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes statusPulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
     }
   }
   @keyframes twinkle {
@@ -270,6 +322,7 @@
 @utility text-hero {
   font-size: clamp(2.058rem, 1.35rem + 3.2vw, 3.33rem);
   line-height: 1.12;
+  letter-spacing: -0.024em;
 }
 
 @utility marker-line {
@@ -327,6 +380,11 @@ body {
   border-radius: 6px;
 }
 
+.chrome-surface {
+  background: color-mix(in oklab, var(--t-bg) 94%, transparent);
+  backdrop-filter: blur(8px) saturate(140%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -335,8 +393,49 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
   .reveal {
     opacity: 1;
     transform: none;
+  }
+
+  .animate-rise,
+  .animate-step-forward,
+  .animate-step-back,
+  .animate-settle,
+  .animate-pop {
+    animation: calmFade 200ms ease-out both !important;
+  }
+
+  .animate-spin {
+    animation: statusSpin 1.6s linear infinite !important;
+  }
+
+  .animate-pulse {
+    animation: statusPulse 2.4s ease-in-out infinite !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .chrome-surface {
+    background: var(--t-bg);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .chrome-surface {
+    background: var(--t-bg);
+    backdrop-filter: none;
+  }
+
+  .paper,
+  .paper-strong,
+  .sticker {
+    border-color: var(--t-line-strong);
+  }
+
+  .hand-note {
+    color: var(--t-ink-2);
   }
 }

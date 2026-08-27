@@ -27,7 +27,7 @@ export function StepProduct() {
   }, [])
 
   return (
-    <div className="space-y-6 animate-rise">
+    <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="font-display text-2xl text-ink-900">Какой мультфильм снимаем?</h1>
         <p className="text-sm text-ink-800">

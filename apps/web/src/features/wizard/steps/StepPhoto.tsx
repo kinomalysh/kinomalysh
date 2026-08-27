@@ -58,7 +58,7 @@ export function StepPhoto({ requireAuth, onSubmitted }: StepPhotoProps) {
   }
 
   return (
-    <div className="space-y-6 animate-rise">
+    <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="font-display text-2xl text-ink-900">Фотография героя</h1>
         <p className="text-sm text-ink-800">
@@ -90,7 +90,7 @@ export function StepPhoto({ requireAuth, onSubmitted }: StepPhotoProps) {
             type="button"
             onClick={() => setPhoto(null)}
             aria-label="Удалить фото"
-            className="absolute right-3 top-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/90 transition-colors hover:bg-white"
+            className="absolute right-3 top-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/90 transition-colors hover:bg-white"
           >
             <X className="h-4 w-4 text-night-950" />
           </button>
