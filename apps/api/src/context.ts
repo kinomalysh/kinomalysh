@@ -21,6 +21,17 @@ export const db = createDb(env.DATABASE_URL)
 
 export const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null })
 
+export const rateLimitRedis = new Redis(env.REDIS_URL, {
+  maxRetriesPerRequest: 1,
+  enableOfflineQueue: false,
+  connectTimeout: 500,
+  lazyConnect: false,
+})
+
+rateLimitRedis.on('error', () => {
+  /* лимитер деградирует сам, ронять API из-за Redis нельзя */
+})
+
 export const castingQueue = new Queue<CastingJobData>(QUEUE_CASTING, { connection: redis })
 export const renderQueue = new Queue<RenderJobData>(QUEUE_RENDER, { connection: redis })
 export const adReelQueue = new Queue<AdReelJobData>(QUEUE_ADREEL, { connection: redis })

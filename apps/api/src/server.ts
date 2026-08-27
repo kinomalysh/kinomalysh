@@ -7,7 +7,7 @@ import fastifyStatic from '@fastify/static'
 import { ZodError } from 'zod'
 import { PLOTS } from '@kidsstory/shared'
 import { assertProdSecrets, env } from './env.js'
-import { redis } from './context.js'
+import { rateLimitRedis } from './context.js'
 import { adminAuthPlugin } from './plugins/adminAuth.js'
 import { authPlugin } from './plugins/auth.js'
 import { accountRoutes } from './routes/account.js'
@@ -28,10 +28,11 @@ async function main() {
     global: true,
     max: 300,
     timeWindow: '1 minute',
-    redis,
-    nameSpace: 'rl:global:',
+    redis: rateLimitRedis,
+    nameSpace: 'rl:',
+    skipOnError: true,
     allowList: (req) => req.url === '/health',
-    errorResponseBuilder: () => ({ error: 'Слишком много запросов — подождите минуту' }),
+    errorResponseBuilder: () => ({ error: 'Слишком много запросов, подождите минуту' }),
   })
   await app.register(fastifyStatic, {
     root: path.resolve(env.UPLOADS_DIR),
