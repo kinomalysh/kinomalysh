@@ -30,9 +30,9 @@ ssh "$HOST" "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BR
 ok "собрано из $BRANCH"
 
 step "Миграции"
-ssh "$HOST" "set -a; . /etc/kinomalysh/db.env; set +a; \
+ssh "$HOST" "sudo bash -c 'set -a; . /etc/kinomalysh/db.env; set +a; \
   for f in $APP_DIR/infra/migrations/*.sql; do \
-    echo \"  \$(basename \$f)\"; psql \"\$DATABASE_URL\" -q -v ON_ERROR_STOP=1 -f \"\$f\"; done" \
+    echo \"  \$(basename \$f)\"; psql \"\$DATABASE_URL\" -q -v ON_ERROR_STOP=1 -f \"\$f\"; done'" \
   || die "миграции не применились"
 ok "схема актуальна"
 
