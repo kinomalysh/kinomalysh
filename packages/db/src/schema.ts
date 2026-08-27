@@ -41,6 +41,10 @@ export const stories = pgTable('stories', {
   resultKey: text('result_key'),
   productId: uuid('product_id'),
   failReason: text('fail_reason'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  photoPurgedAt: timestamp('photo_purged_at', { withTimezone: true }),
+  consentVersion: varchar('consent_version', { length: 16 }),
+  consentAt: timestamp('consent_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

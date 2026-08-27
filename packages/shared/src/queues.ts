@@ -3,6 +3,7 @@ export const QUEUE_RENDER = 'render'
 export const QUEUE_ADREEL = 'adreel'
 export const QUEUE_SCENE = 'scene-asset'
 export const QUEUE_PRODUCT_ORDER = 'product-order'
+export const QUEUE_HOUSEKEEPING = 'housekeeping'
 
 export interface CastingJobData {
   storyId: string
@@ -23,4 +24,8 @@ export interface SceneAssetJobData {
 
 export interface ProductOrderJobData {
   storyId: string
+}
+
+export interface HousekeepingJobData {
+  reason?: string
 }

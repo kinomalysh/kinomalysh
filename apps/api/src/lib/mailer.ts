@@ -27,7 +27,7 @@ export async function sendOtpEmail(to: string, name: string, code: string) {
     from: env.SMTP_FROM,
     to,
     subject: `${code} — ваш код для входа в Киномалыш`,
-    text: `Здравствуйте, ${name}!\n\nВаш код подтверждения: ${code}\nОн действует 10 минут.\n\nЕсли вы не регистрировались в Огоньке — просто проигнорируйте это письмо.`,
+    text: `Здравствуйте, ${name}!\n\nВаш код подтверждения: ${code}\nОн действует 10 минут.\n\nЕсли вы не регистрировались в Киномалыше — просто проигнорируйте это письмо.`,
     html: renderOtpEmail(name, code),
   })
 }
@@ -72,7 +72,7 @@ export function renderOtpEmail(name: string, code: string): string {
           </table>
           <div style="font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#9a99b5;text-align:center;">
             Код действует 10 минут.<br/>
-            Если вы не регистрировались в Огоньке — просто закройте это письмо,
+            Если вы не регистрировались в Киномалыше — просто закройте это письмо,
             ничего не произойдёт.
           </div>
         </td></tr>

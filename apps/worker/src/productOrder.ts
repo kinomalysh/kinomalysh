@@ -9,6 +9,7 @@ import {
   INTRO_CLIP_KEY,
   REEL_NEGATIVE_PROMPT,
   renderVoiceoverText,
+  resultExpiryFrom,
 } from '@kidsstory/shared'
 import type { ChildGender } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
@@ -203,9 +204,16 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
 
     const resultKey = `orders/${storyId}/final.mp4`
     await uploadObject(resultKey, new Uint8Array(await readFile(finalPath)), 'video/mp4')
+    const readyAt = new Date()
     await db
       .update(stories)
-      .set({ status: 'ready', resultKey, failReason: null, updatedAt: new Date() })
+      .set({
+        status: 'ready',
+        resultKey,
+        failReason: null,
+        expiresAt: resultExpiryFrom(readyAt),
+        updatedAt: readyAt,
+      })
       .where(eq(stories.id, storyId))
     console.log(`[order] ${storyId}: готов`)
   } finally {

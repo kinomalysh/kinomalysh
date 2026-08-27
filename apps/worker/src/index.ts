@@ -1,4 +1,4 @@
-import { UnrecoverableError, Worker } from 'bullmq'
+import { Queue, UnrecoverableError, Worker } from 'bullmq'
 import { Redis } from 'ioredis'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { adReels, createDb, productScenes, settings, stories, tokenLedger, users } from '@kidsstory/db'
@@ -9,6 +9,7 @@ import {
   renderVoiceoverText,
   QUEUE_ADREEL,
   QUEUE_CASTING,
+  QUEUE_HOUSEKEEPING,
   QUEUE_RENDER,
   QUEUE_PRODUCT_ORDER,
   QUEUE_SCENE,
@@ -17,6 +18,7 @@ import {
 import type {
   AdReelJobData,
   CastingJobData,
+  HousekeepingJobData,
   ProductOrderJobData,
   RenderJobData,
   SceneAssetJobData,
@@ -33,6 +35,7 @@ import {
   generateScene,
   photoDataUri,
 } from './fal.js'
+import { runHousekeeping } from './housekeeping.js'
 import { assembleProductOrder, OrderFailedError } from './productOrder.js'
 import { generateVoiceover } from './elevenlabs.js'
 
@@ -310,7 +313,31 @@ renderWorker.on('failed', async (job, error) => {
   }
 })
 
-console.log('[worker] listening for casting, render, adreel, scene and product-order jobs')
+const housekeepingQueue = new Queue<HousekeepingJobData>(QUEUE_HOUSEKEEPING, { connection })
+
+const housekeepingWorker = new Worker<HousekeepingJobData>(
+  QUEUE_HOUSEKEEPING,
+  async () => {
+    const report = await runHousekeeping(db)
+    console.log(
+      `[housekeeping] фото удалено ${report.photosPurged}, результатов просрочено ${report.resultsExpired}, ` +
+        `сессий ${report.tokensPruned}, кодов ${report.otpsPruned}`,
+    )
+  },
+  { connection, concurrency: 1 },
+)
+
+housekeepingWorker.on('failed', (_job, error) => {
+  console.error(`[housekeeping] failed: ${error.message}`)
+})
+
+await housekeepingQueue.upsertJobScheduler(
+  'hourly-housekeeping',
+  { every: 60 * 60 * 1000 },
+  { name: 'housekeeping', data: { reason: 'scheduled' } },
+)
+
+console.log('[worker] listening for casting, render, adreel, scene, product-order and housekeeping jobs')
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
@@ -320,6 +347,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
       adReelWorker.close(),
       sceneWorker.close(),
       productOrderWorker.close(),
+      housekeepingWorker.close(),
     ])
     process.exit(0)
   })

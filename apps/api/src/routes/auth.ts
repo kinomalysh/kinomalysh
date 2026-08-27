@@ -46,7 +46,7 @@ async function createAndSendOtp(email: string, name: string) {
 }
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post('/auth/register', async (req, reply) => {
+  app.post('/auth/register', { config: { rateLimit: { max: 10, timeWindow: '10 minutes' } } }, async (req, reply) => {
     const body = registerSchema.parse(req.body)
     const existing = await db.query.users.findFirst({ where: eq(users.email, body.email) })
     if (existing?.emailVerified) {
@@ -67,7 +67,7 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.code(201).send({ ok: true, message: 'Код отправлен на почту' })
   })
 
-  app.post('/auth/verify-email', async (req, reply) => {
+  app.post('/auth/verify-email', { config: { rateLimit: { max: 20, timeWindow: '10 minutes' } } }, async (req, reply) => {
     const body = verifySchema.parse(req.body)
     const otp = await db.query.emailOtps.findFirst({
       where: and(eq(emailOtps.email, body.email), gt(emailOtps.expiresAt, new Date())),
@@ -95,7 +95,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { user: publicUser({ ...user, emailVerified: true }), ...tokens }
   })
 
-  app.post('/auth/resend-code', async (req, reply) => {
+  app.post('/auth/resend-code', { config: { rateLimit: { max: 5, timeWindow: '10 minutes' } } }, async (req, reply) => {
     const body = resendSchema.parse(req.body)
     const user = await db.query.users.findFirst({ where: eq(users.email, body.email) })
     if (!user || user.emailVerified) {
@@ -112,7 +112,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true }
   })
 
-  app.post('/auth/login', async (req, reply) => {
+  app.post('/auth/login', { config: { rateLimit: { max: 15, timeWindow: '10 minutes' } } }, async (req, reply) => {
     const body = loginSchema.parse(req.body)
     const user = await db.query.users.findFirst({ where: eq(users.email, body.email) })
     if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) {
@@ -126,7 +126,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { user: publicUser(user), ...tokens }
   })
 
-  app.post('/auth/refresh', async (req, reply) => {
+  app.post('/auth/refresh', { config: { rateLimit: { max: 30, timeWindow: '10 minutes' } } }, async (req, reply) => {
     const { refreshToken } = (req.body ?? {}) as { refreshToken?: string }
     if (!refreshToken) return reply.code(400).send({ error: 'refreshToken обязателен' })
 

@@ -1,23 +1,28 @@
 import { randomUUID } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { products, stories } from '@kidsstory/db'
+import { productScenes, products, stories, storyScenes } from '@kidsstory/db'
 import {
   chooseAvatarSchema,
+  CONSENT_VERSION,
+  daysLeft,
   getPlotDef,
   storyDetailsSchema,
   storyPrice,
 } from '@kidsstory/shared'
+import { isStorageConfigured, presignGet } from '@kidsstory/storage'
 import { castingQueue, db, productOrderQueue, renderQueue } from '../context.js'
 import { env } from '../env.js'
 import { holdTokens, InsufficientBalanceError } from '../lib/tokens.js'
-import { isStorageConfigured, presignGet } from '@kidsstory/storage'
-import { eq as eqOp } from 'drizzle-orm'
+
+const consentFlag = z
+  .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+  .transform((value) => value === true || value === 'true' || value === '1')
 
 const productOrderQuery = z.object({
   childName: z
@@ -27,10 +32,14 @@ const productOrderQuery = z.object({
     .max(30)
     .regex(/^[А-Яа-яЁёA-Za-z-]+$/, 'только буквы и дефис'),
   gender: z.enum(['male', 'female']).default('male'),
+  consentGuardian: consentFlag,
+  consentTransfer: consentFlag,
 })
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+type Story = typeof stories.$inferSelect
 
 export async function storyRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate)
@@ -52,9 +61,12 @@ export async function storyRoutes(app: FastifyInstance) {
     const { slug } = req.params as { slug: string }
     const parsed = productOrderQuery.safeParse(req.query)
     if (!parsed.success) {
-      return reply.code(400).send({ error: 'Укажите имя ребёнка' })
+      return reply.code(400).send({ error: 'Проверьте имя ребёнка и согласия' })
     }
-    const product = await db.query.products.findFirst({ where: eqOp(products.slug, slug) })
+    if (!parsed.data.consentGuardian || !parsed.data.consentTransfer) {
+      return reply.code(400).send({ error: 'Без обоих согласий заказ оформить нельзя' })
+    }
+    const product = await db.query.products.findFirst({ where: eq(products.slug, slug) })
     if (!product || product.status !== 'active') {
       return reply.code(404).send({ error: 'Мультик не найден' })
     }
@@ -72,6 +84,8 @@ export async function storyRoutes(app: FastifyInstance) {
         childName: parsed.data.childName,
         gender: parsed.data.gender,
         tokensCost: product.priceTokens,
+        consentVersion: CONSENT_VERSION,
+        consentAt: new Date(),
       })
       .returning()
     return reply.code(201).send({ story: await toDto(story) })
@@ -82,13 +96,35 @@ export async function storyRoutes(app: FastifyInstance) {
       where: eq(stories.userId, req.userId),
       orderBy: desc(stories.createdAt),
     })
-    return { stories: await Promise.all(rows.map(toDto)) }
+    return { stories: await Promise.all(rows.map((row) => toDto(row))) }
   })
 
   app.get('/stories/:id', async (req, reply) => {
     const story = await findOwn(req.userId, (req.params as { id: string }).id)
     if (!story) return reply.code(404).send({ error: 'Сказка не найдена' })
     return { story: await toDto(story) }
+  })
+
+  app.delete('/stories/:id', async (req, reply) => {
+    const story = await findOwn(req.userId, (req.params as { id: string }).id)
+    if (!story) return reply.code(404).send({ error: 'Сказка не найдена' })
+    if (story.status === 'rendering') {
+      return reply.code(409).send({ error: 'Мультик ещё собирается - дождитесь готовности' })
+    }
+    await purgePhotoFile(story.photoPath)
+    await db.delete(stories).where(eq(stories.id, story.id))
+    return { ok: true }
+  })
+
+  app.get('/stories/:id/download', async (req, reply) => {
+    const story = await findOwn(req.userId, (req.params as { id: string }).id)
+    if (!story) return reply.code(404).send({ error: 'Сказка не найдена' })
+    if (story.status !== 'ready' || !story.resultKey || !isStorageConfigured) {
+      return reply.code(409).send({ error: 'Файл ещё не готов' })
+    }
+    const name = story.childName ? `kinomalysh-${translit(story.childName)}.mp4` : 'kinomalysh.mp4'
+    const url = await presignGet(story.resultKey, { expiresIn: 600, downloadFilename: name })
+    return { url }
   })
 
   app.post('/stories/:id/avatar', async (req, reply) => {
@@ -156,6 +192,11 @@ export async function storyRoutes(app: FastifyInstance) {
     const story = await findOwn(req.userId, (req.params as { id: string }).id)
     if (!story) return reply.code(404).send({ error: 'Сказка не найдена' })
     const isProductOrder = Boolean(story.productId)
+    if (story.photoPurgedAt) {
+      return reply
+        .code(409)
+        .send({ error: 'Фото удалено по сроку хранения - оформите заказ заново' })
+    }
     if (isProductOrder) {
       if (story.status !== 'awaiting_payment' || !story.tokensCost) {
         return reply.code(409).send({ error: 'Заказ уже оплачен или не готов к оплате' })
@@ -168,14 +209,14 @@ export async function storyRoutes(app: FastifyInstance) {
       await holdTokens(db, req.userId, story.tokensCost, { storyId: story.id })
     } catch (error) {
       if (error instanceof InsufficientBalanceError) {
-        return reply.code(402).send({ error: 'Недостаточно токенов — пополните баланс' })
+        return reply.code(402).send({ error: 'Недостаточно токенов - пополните баланс' })
       }
       throw error
     }
 
     const [updated] = await db
       .update(stories)
-      .set({ status: 'rendering', updatedAt: new Date() })
+      .set({ status: 'rendering', failReason: null, updatedAt: new Date() })
       .where(eq(stories.id, story.id))
       .returning()
     if (isProductOrder) {
@@ -207,10 +248,16 @@ async function savePhoto(req: FastifyRequest, reply: FastifyReply): Promise<stri
   await mkdir(path.dirname(absPath), { recursive: true })
   await pipeline(file.file, createWriteStream(absPath))
   if (file.file.truncated) {
+    await rm(absPath, { force: true }).catch(() => undefined)
     reply.code(400).send({ error: 'Файл больше 10 МБ' })
     return null
   }
   return relPath
+}
+
+async function purgePhotoFile(photoPath: string | null): Promise<void> {
+  if (!photoPath) return
+  await rm(path.join(env.UPLOADS_DIR, photoPath), { force: true }).catch(() => undefined)
 }
 
 async function findOwn(userId: string, id: string) {
@@ -219,15 +266,53 @@ async function findOwn(userId: string, id: string) {
   })
 }
 
-async function toDto(story: typeof stories.$inferSelect) {
+export interface OrderProgress {
+  stage: 'awaiting_payment' | 'queued' | 'rendering' | 'assembling' | 'ready' | 'failed' | 'expired'
+  done: number
+  total: number
+  percent: number
+}
+
+async function buildProgress(story: Story): Promise<OrderProgress | null> {
+  if (!story.productId) return null
+  if (story.status === 'awaiting_payment') {
+    return { stage: 'awaiting_payment', done: 0, total: 0, percent: 0 }
+  }
+  if (story.status === 'ready') return { stage: 'ready', done: 1, total: 1, percent: 100 }
+  if (story.status === 'failed') return { stage: 'failed', done: 0, total: 0, percent: 0 }
+  if (story.status === 'expired') return { stage: 'expired', done: 0, total: 0, percent: 100 }
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(productScenes)
+    .where(and(eq(productScenes.productId, story.productId), eq(productScenes.kind, 'hero')))
+  const [doneRow] = await db
+    .select({ done: sql<number>`count(*)::int` })
+    .from(storyScenes)
+    .where(and(eq(storyScenes.storyId, story.id), eq(storyScenes.status, 'ready')))
+
+  const total = totalRow?.total ?? 0
+  const done = Math.min(doneRow?.done ?? 0, total)
+  const stage = total > 0 && done >= total ? 'assembling' : done > 0 ? 'rendering' : 'queued'
+  const percent = total === 0 ? 5 : Math.min(95, Math.round((done / total) * 90) + 5)
+  return { stage, done, total, percent }
+}
+
+async function toDto(story: Story) {
   let resultUrl = story.resultUrl
-  if (isStorageConfigured && story.resultKey) {
+  if (isStorageConfigured && story.resultKey && story.status === 'ready') {
     resultUrl = await presignGet(story.resultKey, { expiresIn: 3600 }).catch(() => story.resultUrl)
+  }
+  let product: { slug: string; title: string } | null = null
+  if (story.productId) {
+    const row = await db.query.products.findFirst({ where: eq(products.id, story.productId) })
+    product = row ? { slug: row.slug, title: row.title } : null
   }
   return {
     id: story.id,
     status: story.status,
     productId: story.productId,
+    product,
     failReason: story.failReason,
     plotId: story.plotId,
     childName: story.childName,
@@ -239,6 +324,26 @@ async function toDto(story: typeof stories.$inferSelect) {
     chosenAvatar: story.chosenAvatar,
     scenes: story.scenes,
     resultUrl,
+    progress: await buildProgress(story),
+    expiresAt: story.expiresAt?.toISOString() ?? null,
+    daysLeft: story.expiresAt ? daysLeft(story.expiresAt, new Date()) : null,
+    photoPurged: Boolean(story.photoPurgedAt),
     createdAt: story.createdAt.toISOString(),
   }
+}
+
+const TRANSLIT: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
+  к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
+  х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+}
+
+function translit(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .split('')
+      .map((char) => TRANSLIT[char] ?? (/[a-z0-9-]/.test(char) ? char : ''))
+      .join('') || 'malysh'
+  )
 }
