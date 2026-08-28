@@ -5,8 +5,8 @@ import { asset } from '@/shared/lib/asset'
 export function DemoReel() {
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} id="demo-reel" aria-label="Фрагмент настоящей сказки" className="py-6">
-      <figure className="reveal">
+    <section ref={ref} id="demo-reel" aria-label="Фрагмент настоящей сказки" className="shell py-6 lg:py-10">
+      <figure className="reveal mx-auto max-w-4xl">
         <div className="sticker overflow-hidden rounded-[2rem] rotate-[0.6deg]">
           <video
             src={asset('story-demo.mp4')}
@@ -20,7 +20,7 @@ export function DemoReel() {
           />
         </div>
         <figcaption className="mt-3 flex items-start justify-between gap-3 px-2">
-          <span className="hand-note text-lg rotate-[-1deg]">
+          <span className="hand-note rotate-[-1deg] text-lg lg:text-xl">
             фрагмент настоящей сказки «Луна ждёт в гости»
           </span>
           <span className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink-900/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-ink-800">

@@ -58,7 +58,7 @@ export function PaymentResultPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm space-y-6 pt-10 animate-rise">
+    <div className="mx-auto w-full max-w-sm space-y-6 px-4 pt-10 animate-rise lg:pt-20">
       <Card className="space-y-4 p-8 text-center">
         {outcome === 'succeeded' ? (
           <>

@@ -327,17 +327,17 @@
 
 @utility marker-line {
   position: relative;
+  display: inline-block;
   &::after {
     content: '';
     position: absolute;
-    inset-inline: -2%;
-    bottom: 0.08em;
-    height: 0.42em;
-    background: var(--t-marker);
-    border-radius: 3px;
-    transform: rotate(-1deg) scaleX(0);
+    inset-inline: -1.5%;
+    bottom: -0.06em;
+    height: 0.16em;
+    background: var(--t-gold);
+    border-radius: 999px;
+    transform: rotate(-0.8deg) scaleX(0);
     transform-origin: left center;
-    z-index: -1;
     animation: draw 0.55s cubic-bezier(0.65, 0, 0.35, 1) 0.55s both;
   }
 }
@@ -380,6 +380,67 @@ body {
   border-radius: 6px;
 }
 
+.shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+}
+
+.shell-narrow {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 46rem;
+  padding-inline: 1rem;
+}
+
+.shell-prose {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 38rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .shell,
+  .shell-narrow,
+  .shell-prose {
+    padding-inline: 2rem;
+  }
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 0.25rem;
+  font-size: 0.889rem;
+  font-weight: 600;
+  color: var(--t-ink-2);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--t-gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link:hover {
+  color: var(--t-ink);
+}
+
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  transform: scaleX(1);
+}
+
 .chrome-surface {
   background: color-mix(in oklab, var(--t-bg) 94%, transparent);
   backdrop-filter: blur(8px) saturate(140%);
@@ -417,14 +478,136 @@ body {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .chrome-surface {
+  .shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+}
+
+.shell-narrow {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 46rem;
+  padding-inline: 1rem;
+}
+
+.shell-prose {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 38rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .shell,
+  .shell-narrow,
+  .shell-prose {
+    padding-inline: 2rem;
+  }
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 0.25rem;
+  font-size: 0.889rem;
+  font-weight: 600;
+  color: var(--t-ink-2);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--t-gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link:hover {
+  color: var(--t-ink);
+}
+
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  transform: scaleX(1);
+}
+
+.chrome-surface {
     background: var(--t-bg);
     backdrop-filter: none;
   }
 }
 
 @media (prefers-contrast: more) {
-  .chrome-surface {
+  .shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+}
+
+.shell-narrow {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 46rem;
+  padding-inline: 1rem;
+}
+
+.shell-prose {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 38rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .shell,
+  .shell-narrow,
+  .shell-prose {
+    padding-inline: 2rem;
+  }
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 0.25rem;
+  font-size: 0.889rem;
+  font-weight: 600;
+  color: var(--t-ink-2);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--t-gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link:hover {
+  color: var(--t-ink);
+}
+
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  transform: scaleX(1);
+}
+
+.chrome-surface {
     background: var(--t-bg);
     backdrop-filter: none;
   }

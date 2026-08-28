@@ -117,11 +117,16 @@ export function ProfilePage() {
   }
 
   if (status !== 'authed' || !user) {
-    return <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
+    return (
+      <div className="shell pt-10">
+        <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8 pt-2 animate-rise">
+    <div className="shell pt-4 animate-rise lg:pt-10">
+      <div className="space-y-8 lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-12 lg:space-y-0">
       <section aria-label="Читательский билет" className="pt-2">
         <div className="sticker rotate-[-0.8deg] rounded-3xl p-5">
           <div className="flex items-center justify-between gap-3">
@@ -367,6 +372,7 @@ export function ProfilePage() {
           </button>
         )}
       </section>
+      </div>
     </div>
   )
 }

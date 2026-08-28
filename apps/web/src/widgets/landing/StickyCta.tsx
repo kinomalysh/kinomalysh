@@ -18,7 +18,7 @@ export function StickyCta() {
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-[5.5rem] z-20 mx-auto hidden w-full max-w-lg px-4 transition-all duration-300 sm:block md:max-w-2xl ${
+      className={`fixed inset-x-0 bottom-[5.5rem] z-20 mx-auto hidden w-full max-w-lg px-4 transition-all duration-300 sm:block lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0'
       }`}
     >

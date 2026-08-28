@@ -83,11 +83,15 @@ export function StoryPage() {
   }
 
   if (status === 'loading' || (!order && !error)) {
-    return <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
+    return (
+      <div className="shell-narrow pt-10">
+        <div className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-5 pt-2 animate-rise">
+    <div className="shell-narrow space-y-5 pt-4 animate-rise lg:pt-10">
       <Link
         to={ROUTES.library}
         className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-ink-900"

@@ -16,7 +16,7 @@ export function NotFoundPage() {
   })
 
   return (
-    <>
+    <div className="shell pt-4 lg:pt-10">
       <header className="pt-16 pb-10">
         <p className="hand-note text-xl rotate-[-1deg]">404</p>
         <h1 className="mt-1 font-display text-hero text-ink-900 text-balance">
@@ -62,6 +62,6 @@ export function NotFoundPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   )
 }

@@ -19,7 +19,7 @@ function SeoLanding({ page }: { page: SeoPage }) {
   useSeoMeta({ title: page.title, description: page.description, path })
 
   return (
-    <>
+    <div className="shell-narrow pt-4 lg:pt-10">
       <JsonLd data={buildProductLd()} />
       <JsonLd data={buildFaqLd(page.faq)} />
       <JsonLd
@@ -92,7 +92,7 @@ function SeoLanding({ page }: { page: SeoPage }) {
 
       <Footer />
       <StickyCta />
-    </>
+    </div>
   )
 }
 

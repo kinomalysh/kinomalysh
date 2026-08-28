@@ -45,10 +45,10 @@ export function LibraryPage() {
   }, [orders, load])
 
   return (
-    <div className="space-y-5 pt-2 animate-rise">
+    <div className="shell space-y-5 pt-4 animate-rise lg:pt-10">
       <header className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-ink-900">Библиотека</h1>
+          <h1 className="font-display text-2xl text-ink-900 lg:text-3xl">Библиотека</h1>
           <p className="mt-1 text-sm text-ink-800">Готовые мультфильмы храним 30 дней</p>
         </div>
         <Button size="sm" onClick={() => navigate(ROUTES.create)}>
@@ -65,7 +65,7 @@ export function LibraryPage() {
       )}
 
       {orders === null && !error && (
-        <ul className="space-y-3">
+        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 xl:grid-cols-3">
           {[0, 1].map((key) => (
             <li key={key} className="h-24 animate-pulse rounded-3xl bg-paper-shade" />
           ))}
@@ -85,7 +85,7 @@ export function LibraryPage() {
       )}
 
       {orders && orders.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 xl:grid-cols-3">
           {orders.map((order) => {
             const ready = order.status === 'ready'
             return (

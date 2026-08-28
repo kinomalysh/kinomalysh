@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FilmSlate, WarningCircle } from '@phosphor-icons/react'
+import { FilmSlate, Play, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { TOKEN_TO_RUB } from '@/shared/config/routes'
@@ -48,9 +48,9 @@ export function StepProduct() {
       )}
 
       {!failed && products === null && (
-        <ul className="space-y-3">
+        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
           {[0, 1].map((key) => (
-            <li key={key} className="h-32 animate-pulse rounded-3xl bg-paper-shade" />
+            <li key={key} className="h-56 animate-pulse rounded-3xl bg-paper-shade" />
           ))}
         </ul>
       )}
@@ -74,30 +74,44 @@ export function StepProduct() {
       )}
 
       {products !== null && products.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
           {products.map((product) => (
             <li key={product.id}>
               <Card
                 interactive
                 onClick={() => chooseProduct(product)}
-                className="overflow-hidden p-0"
+                className="group/card overflow-hidden p-0"
               >
-                {product.previewUrl ? (
-                  <video
-                    src={product.previewUrl}
-                    className="aspect-video w-full bg-night-950 object-cover"
-                    muted
-                    loop
-                    playsInline
-                    preload="none"
-                    onMouseEnter={(event) => void event.currentTarget.play().catch(() => undefined)}
-                    onMouseLeave={(event) => event.currentTarget.pause()}
+                <div className="relative aspect-video w-full overflow-hidden bg-night-900">
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(242,179,61,0.22),transparent_65%)]"
                   />
-                ) : (
-                  <div className="flex aspect-video w-full items-center justify-center bg-night-900">
-                    <FilmSlate className="h-10 w-10 text-moon-300" />
-                  </div>
-                )}
+                  {product.previewUrl && (
+                    <video
+                      src={product.previewUrl}
+                      className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
+                      muted
+                      loop
+                      playsInline
+                      preload="none"
+                      onMouseEnter={(event) => void event.currentTarget.play().catch(() => undefined)}
+                      onMouseLeave={(event) => event.currentTarget.pause()}
+                    />
+                  )}
+                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 transition-opacity duration-300 group-hover/card:opacity-0">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink-900 bg-cream/95 text-night-950 shadow-[0_3px_0_rgba(0,0,0,0.4)]">
+                      {product.previewUrl ? (
+                        <Play weight="fill" className="ml-0.5 h-5 w-5" />
+                      ) : (
+                        <FilmSlate className="h-5 w-5" />
+                      )}
+                    </span>
+                    <span className="hand-note text-base">
+                      {product.previewUrl ? 'наведите — посмотреть' : 'скоро'}
+                    </span>
+                  </span>
+                </div>
                 <div className="space-y-1.5 p-5">
                   <h2 className="font-display text-xl text-ink-900">{product.title}</h2>
                   {product.tagline && <p className="text-sm text-ink-800">{product.tagline}</p>}

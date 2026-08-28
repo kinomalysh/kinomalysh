@@ -11,7 +11,8 @@ const DOC_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="mt-4 border-t-2 border-dashed border-ink-900/15 pb-28 pt-10">
+    <footer className="mt-4 border-t-2 border-dashed border-ink-900/15 pb-28 pt-10 lg:pb-16 lg:pt-16">
+      <div className="shell">
       <p className="hand-note text-center text-lg rotate-[-1deg]">
         — конец. но сказки только начинаются —
       </p>
@@ -90,6 +91,7 @@ export function Footer() {
       <p className="mt-10 text-center text-[12px] text-ink-500">
         © 2026 {BRAND} · Сделано с теплом для вечерних ритуалов
       </p>
+      </div>
     </footer>
   )
 }

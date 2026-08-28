@@ -14,9 +14,9 @@ interface ChapterTitleProps {
 
 export function ChapterTitle({ chapter, title, id }: ChapterTitleProps) {
   return (
-    <div className="flex items-baseline gap-3">
-      <span className="hand-note shrink-0 text-lg rotate-[-2deg]">{chapter}</span>
-      <h2 id={id} className="font-display text-2xl text-ink-900 text-balance">
+    <div className="flex items-baseline gap-3 lg:gap-4">
+      <span className="hand-note shrink-0 rotate-[-2deg] text-lg lg:text-xl">{chapter}</span>
+      <h2 id={id} className="font-display text-2xl text-balance text-ink-900 lg:text-3xl">
         {title}
       </h2>
     </div>
@@ -49,14 +49,14 @@ export const STEPS = [
 export function Magic() {
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} aria-labelledby="magic-heading" className="py-12">
+    <section ref={ref} aria-labelledby="magic-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 1" title="Магия в одном фото" id="magic-heading" />
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800">
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800 lg:text-base">
         Нейросеть смотрит на фото и рисует мультяшного двойника: причёска, улыбка и любимая
         футболка остаются на месте.
       </p>
-      <div className="reveal mt-8 flex items-center justify-center gap-3 sm:gap-6">
-        <figure className="w-[38%] max-w-52 rotate-[-2.5deg]">
+      <div className="reveal mt-8 flex items-center justify-center gap-3 sm:gap-6 lg:mt-12 lg:gap-14">
+        <figure className="w-[38%] max-w-52 rotate-[-2.5deg] lg:max-w-sm">
           <div className="sticker overflow-hidden rounded-2xl">
             <img
               src="/demo-photo.webp"
@@ -72,7 +72,7 @@ export function Magic() {
         <svg
           viewBox="0 0 64 40"
           aria-hidden
-          className="w-14 shrink-0 text-poppy sm:w-16"
+          className="w-14 shrink-0 text-poppy sm:w-16 lg:w-24"
         >
           <path
             d="M4 26 C 22 10, 40 10, 56 20"
@@ -90,7 +90,7 @@ export function Magic() {
             strokeLinejoin="round"
           />
         </svg>
-        <figure className="w-[38%] max-w-52 rotate-[2.5deg]">
+        <figure className="w-[38%] max-w-52 rotate-[2.5deg] lg:max-w-sm">
           <div className="sticker overflow-hidden rounded-2xl">
             <img
               src="/demo-hero.webp"
@@ -104,7 +104,7 @@ export function Magic() {
           <figcaption className="hand-note mt-2.5 text-center text-base">герой сказки</figcaption>
         </figure>
       </div>
-      <p className="hand-note mx-auto mt-6 max-w-xs text-center text-lg">
+      <p className="hand-note mx-auto mt-6 max-w-xs text-center text-lg lg:mt-8 lg:max-w-sm lg:text-xl">
         похож или нет — решаете вы. портреты рисуем бесплатно
       </p>
     </section>
@@ -129,19 +129,20 @@ const REVIEWS = [
 export function Reviews() {
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} aria-label="Отзывы родителей" className="py-12">
-      <p className="hand-note text-lg rotate-[-1deg]">на полях — родители пишут:</p>
-      <div className="mt-5 space-y-3">
+    <section ref={ref} aria-label="Отзывы родителей" className="shell py-12 lg:py-16">
+      <p className="hand-note rotate-[-1deg] text-lg lg:text-xl">на полях — родители пишут:</p>
+      <div className="mt-5 space-y-3 lg:mt-8 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
         {REVIEWS.map((review, i) => (
           <blockquote
             key={review.author}
             className={cn(
-              'reveal paper max-w-md rounded-3xl p-5',
-              i % 2 === 1 ? 'ml-auto rotate-[0.6deg]' : 'rotate-[-0.6deg]',
+              'reveal paper max-w-md rounded-3xl p-5 lg:max-w-none lg:p-6',
+              i % 2 === 1 ? 'ml-auto rotate-[0.6deg] lg:ml-0' : 'rotate-[-0.6deg]',
+              i === 1 && 'lg:translate-y-5',
             )}
             style={{ '--reveal-delay': `${i * 90}ms` } as CSSProperties}
           >
-            <p className="font-hand text-xl leading-snug text-ink-900">«{review.text}»</p>
+            <p className="font-hand text-xl leading-snug text-ink-900 lg:text-2xl">«{review.text}»</p>
             <footer className="mt-2 text-xs font-semibold text-ink-500">{review.author}</footer>
           </blockquote>
         ))}
@@ -153,15 +154,16 @@ export function Reviews() {
 export function HowItWorks() {
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} aria-labelledby="how-heading" className="py-12">
+    <section ref={ref} aria-labelledby="how-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 2" title="Как рождается сказка" id="how-heading" />
-      <ol className="mt-8 space-y-0">
+      <ol className="mt-8 space-y-0 lg:mt-12 lg:grid lg:grid-cols-4 lg:gap-8">
         {STEPS.map((step, i) => (
           <li
             key={step.title}
             className={cn(
               'reveal relative border-l-2 border-dashed border-ink-900/25 pb-8 pl-7',
-              i === STEPS.length - 1 && 'border-transparent pb-0',
+              'lg:border-l-0 lg:border-t-2 lg:pb-0 lg:pl-0 lg:pt-9',
+              i === STEPS.length - 1 && 'border-transparent pb-0 lg:border-transparent',
             )}
             style={{ '--reveal-delay': `${i * 90}ms` } as CSSProperties}
           >
@@ -169,13 +171,14 @@ export function HowItWorks() {
               aria-hidden
               className={cn(
                 'absolute -left-[13px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink-900 text-[11px] font-bold',
+                'lg:left-0 lg:-top-[13px] lg:h-7 lg:w-7 lg:text-xs',
                 i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-on-poppy',
               )}
             >
               {i + 1}
             </span>
             <div className="flex flex-wrap items-baseline gap-x-3">
-              <h3 className="font-display text-lg text-ink-900">{step.title}</h3>
+              <h3 className="font-display text-lg text-ink-900 lg:text-xl">{step.title}</h3>
               <span className="hand-note text-base">{step.note}</span>
             </div>
             <p className="mt-1.5 max-w-md text-sm leading-relaxed text-ink-800">{step.text}</p>
@@ -191,12 +194,12 @@ export function Showcase() {
   const navigate = useNavigate()
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="py-12">
+    <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 1" title="Какой вечер спасаем?" id="showcase-heading" />
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800">
+      <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-800 lg:text-base">
         Не «контент», а инструменты на вечер: уснуть без слёз, почистить зубы без войны, подружиться со своей злостью.
       </p>
-      <div className="-mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 py-4 scroll-px-5 scrollbar-none">
+      <div className="-mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 py-4 scroll-px-5 scrollbar-none lg:mx-0 lg:mt-10 lg:grid lg:grid-cols-3 lg:gap-7 lg:overflow-visible lg:px-0 xl:grid-cols-4">
         {featured.map((plot, i) => (
           <button
             key={plot.id}
@@ -204,7 +207,7 @@ export function Showcase() {
             onClick={() => navigate(ROUTES.create)}
             aria-label={`Создать сказку «${plot.title}»`}
             className={cn(
-              'reveal sticker w-60 shrink-0 cursor-pointer snap-start rounded-3xl p-3 text-left transition-transform duration-200 hover:-translate-y-1 hover:rotate-0',
+              'reveal sticker flex w-60 shrink-0 cursor-pointer snap-start flex-col rounded-3xl p-3 text-left transition-transform duration-200 hover:-translate-y-1 hover:rotate-0 lg:w-auto',
               i % 2 === 0 ? 'rotate-[-1.3deg]' : 'rotate-[1.3deg]',
             )}
             style={{ '--reveal-delay': `${(i % 4) * 80}ms` } as CSSProperties}
@@ -225,9 +228,11 @@ export function Showcase() {
                 <Play weight="fill" className="ml-0.5 h-4 w-4" />
               </span>
             </div>
-            <h3 className="mt-3 px-1 font-display text-lg leading-snug text-ink-900">{plot.title}</h3>
+            <h3 className="mt-3 px-1 font-display text-lg leading-snug text-ink-900 lg:text-xl">
+              {plot.title}
+            </h3>
             <p className="mt-1 px-1 text-xs leading-relaxed text-ink-800">{plot.tagline}</p>
-            <p className="mt-2 flex items-center justify-between px-1 pb-1">
+            <p className="mt-auto flex items-center justify-between px-1 pb-1 pt-3">
               <span className="text-[11px] font-bold uppercase tracking-wide text-ink-500">
                 {plot.ages} лет
               </span>

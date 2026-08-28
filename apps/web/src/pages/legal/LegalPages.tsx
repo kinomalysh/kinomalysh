@@ -21,7 +21,7 @@ function DocLayout({
   sections: DocSection[]
 }) {
   return (
-    <article className="mx-auto max-w-2xl pb-32 pt-2 animate-rise">
+    <article className="shell-narrow pb-32 pt-4 animate-rise lg:pt-10">
       <Link
         to={ROUTES.home}
         className="flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-800 transition-colors hover:text-poppy"

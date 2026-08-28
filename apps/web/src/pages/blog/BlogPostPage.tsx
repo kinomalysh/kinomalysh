@@ -44,7 +44,7 @@ function BlogArticle({ post }: { post: BlogPost }) {
   useSeoMeta({ title: post.title, description: post.description, path })
 
   return (
-    <>
+    <div className="shell-narrow pt-4 lg:pt-10">
       <JsonLd data={buildArticleLd(post, path)} />
       <JsonLd
         data={buildBreadcrumbLd([
@@ -105,7 +105,7 @@ function BlogArticle({ post }: { post: BlogPost }) {
 
       <Footer />
       <StickyCta />
-    </>
+    </div>
   )
 }
 

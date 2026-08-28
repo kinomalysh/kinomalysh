@@ -88,7 +88,7 @@ export function AuthPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm space-y-6 pt-6 animate-rise">
+    <div className="mx-auto w-full max-w-sm space-y-6 px-4 pt-10 animate-rise lg:pt-20">
       <header className="space-y-2 text-center">
         <h1 className="font-display text-2xl text-ink-900">{TITLES[mode]}</h1>
         <p className="text-sm text-ink-800">{SUBTITLES[mode]}</p>

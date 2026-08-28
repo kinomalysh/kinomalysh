@@ -40,7 +40,7 @@ export function BlogIndexPage() {
   const posts = [...BLOG_POSTS].sort((a, b) => b.published.localeCompare(a.published))
 
   return (
-    <>
+    <div className="shell pt-4 lg:pt-10">
       <JsonLd data={buildCollectionLd()} />
       <JsonLd
         data={buildBreadcrumbLd([
@@ -90,6 +90,6 @@ export function BlogIndexPage() {
 
       <Footer />
       <StickyCta />
-    </>
+    </div>
   )
 }

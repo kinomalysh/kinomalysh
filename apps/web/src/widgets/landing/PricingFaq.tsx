@@ -15,8 +15,8 @@ const GUARANTEES = [
     text: 'Три портрета героя рисуем до всякой оплаты. Не похож — перерисуем ещё раз.',
   },
   {
-    title: 'Кадры — до оплаты',
-    text: 'Показываем сцены будущей сказки заранее. Платите, только когда всё нравится.',
+    title: 'Фото живёт неделю',
+    text: 'Снимок нужен только для вашей сказки и удаляется через семь дней автоматически.',
   },
   {
     title: 'Цена — одна и понятная',
@@ -28,13 +28,13 @@ export function Pricing() {
   const navigate = useNavigate()
   const ref = useReveal<HTMLElement>()
   return (
-    <section ref={ref} aria-labelledby="pricing-heading" className="py-12">
+    <section ref={ref} aria-labelledby="pricing-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 3" title="Платите в самом конце" id="pricing-heading" />
-      <ul className="mt-7 space-y-3">
+      <ul className="mt-7 space-y-3 lg:mt-10 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
         {GUARANTEES.map((g, i) => (
           <li
             key={g.title}
-            className="reveal paper flex items-start gap-4 rounded-3xl p-5"
+            className="reveal paper flex items-start gap-4 rounded-3xl p-5 lg:flex-col lg:gap-3 lg:p-7"
             style={{ '--reveal-delay': i * 80 + 'ms' } as CSSProperties}
           >
             <span
@@ -47,13 +47,13 @@ export function Pricing() {
               <Check className="h-4 w-4" weight="bold" />
             </span>
             <span>
-              <span className="block font-display text-lg text-ink-900">{g.title}</span>
+              <span className="block font-display text-lg text-ink-900 lg:text-xl">{g.title}</span>
               <span className="mt-0.5 block text-sm leading-relaxed text-ink-800">{g.text}</span>
             </span>
           </li>
         ))}
       </ul>
-      <div className="reveal mt-5 flex flex-col items-center gap-3">
+      <div className="reveal mt-5 flex flex-col items-center gap-3 lg:mt-10">
         <Button size="lg" className="w-full sm:w-auto" onClick={() => navigate(ROUTES.create)}>
           Загрузить фото — бесплатно
         </Button>
@@ -69,9 +69,15 @@ export function Pricing() {
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0)
   return (
-    <section aria-labelledby="faq-heading" className="py-12">
-      <ChapterTitle chapter="глава 4" title="Родители спрашивают" id="faq-heading" />
-      <div className="mt-7 divide-y-2 divide-dashed divide-ink-900/15 border-y-2 border-dashed border-ink-900/15">
+    <section aria-labelledby="faq-heading" className="shell py-12 lg:py-16">
+      <div className="lg:grid lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <ChapterTitle chapter="глава 4" title="Родители спрашивают" id="faq-heading" />
+          <p className="hand-note mt-4 hidden rotate-[-1deg] text-lg lg:block">
+            не нашли своё? напишите в телеграм, отвечаем живыми словами
+          </p>
+        </div>
+        <div className="mt-7 divide-y-2 divide-dashed divide-ink-900/15 border-y-2 border-dashed border-ink-900/15 lg:mt-0">
         {FAQ.map((item, i) => {
           const isOpen = open === i
           return (
@@ -80,9 +86,9 @@ export function Faq() {
                 type="button"
                 aria-expanded={isOpen}
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left"
+                className="flex w-full cursor-pointer items-center justify-between gap-3 py-4 text-left lg:py-5"
               >
-                <span className="font-display text-base text-ink-900">{item.q}</span>
+                <span className="font-display text-base text-ink-900 lg:text-lg">{item.q}</span>
                 <CaretDown
                   className={cn(
                     'h-4 w-4 shrink-0 text-ink-500 transition-transform duration-200',
@@ -96,6 +102,7 @@ export function Faq() {
             </div>
           )
         })}
+        </div>
       </div>
     </section>
   )
