@@ -145,7 +145,7 @@ export function StepPhoto({ requireAuth, onSubmitted }: StepPhotoProps) {
           checked={consentTransfer}
           onChange={(value) => setConsent('consentTransfer', value)}
         >
-          Согласен на трансграничную передачу фотографии сервисам генерации на время обработки.
+          Согласен на трансграничную передачу фотографии сервисам генерации на время обработки
           Подробнее - в{' '}
           <Link to={ROUTES.privacy} className="underline underline-offset-2">
             политике конфиденциальности

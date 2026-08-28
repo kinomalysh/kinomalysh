@@ -12,27 +12,27 @@ export function Hero() {
     <section aria-labelledby="hero-heading" className="shell pt-6 pb-14 md:pt-12 lg:pt-14 lg:pb-20">
       <div className="md:grid md:grid-cols-[1fr_minmax(280px,340px)] md:items-center md:gap-10 lg:grid-cols-[1.05fr_minmax(380px,540px)] lg:gap-16">
         <div>
-          <p className="hand-note rotate-[-1deg] text-xl animate-settle lg:text-2xl">сегодня вечером —</p>
+          <p className="hand-note rotate-[-1deg] text-xl animate-settle lg:text-2xl">сегодня вечером -</p>
           <h1
             id="hero-heading"
             className="mt-1 font-display text-hero text-ink-900 text-balance animate-settle"
             style={{ animationDelay: '90ms' }}
           >
-            ваш ребёнок — <span className="marker-line whitespace-nowrap">герой мультфильма</span>
+            ваш ребёнок - <span className="marker-line whitespace-nowrap">герой мультфильма</span>
           </h1>
           <p
             className="mt-4 max-w-md text-base leading-relaxed text-ink-800 animate-settle lg:mt-6 lg:max-w-lg lg:text-lg"
             style={{ animationDelay: '200ms' }}
           >
-            Одно фото — и через 15 минут готов мультфильм или книга с озвучкой, где главную роль
-            играет ваш ребёнок.
+            Одно фото - и через 15 минут готов мультфильм или книга с озвучкой, где главную роль
+            играет ваш ребёнок
           </p>
           <div className="mt-6 animate-pop lg:mt-9" style={{ animationDelay: '380ms' }}>
             <Button size="lg" className="w-full sm:w-auto" onClick={() => navigate(ROUTES.create)}>
-              Загрузить фото — бесплатно
+              Загрузить фото - бесплатно
             </Button>
             <p className="hand-note mt-2.5 rotate-[-1deg] text-base lg:text-lg">
-              три портрета героя — бесплатно, за пару минут
+              три портрета героя - бесплатно, за пару минут
             </p>
           </div>
         </div>

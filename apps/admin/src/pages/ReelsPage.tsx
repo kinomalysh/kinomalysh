@@ -115,7 +115,7 @@ function ReelCard({ reel, onDelete }: { reel: Reel; onDelete: (id: string) => Pr
   }
 
   const remove = async () => {
-    if (!confirm('Удалить ролик? Файл в хранилище тоже будет удалён.')) return
+    if (!confirm('Удалить ролик? Файл в хранилище тоже будет удалён')) return
     setDeleting(true)
     try {
       await onDelete(reel.id)
@@ -244,20 +244,20 @@ export function ReelsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl">Генерация роликов</h1>
-        <p className="text-sm text-ink-3">Стиль Pixar и вертикаль 9:16 зашиты по умолчанию — опишите только сцену.</p>
+        <p className="text-sm text-ink-3">Стиль Pixar и вертикаль 9:16 зашиты по умолчанию - опишите только сцену.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SamplePhoto
           slug="sample-child"
           label="Ребёнок по умолчанию"
-          hint="Используется в «Рилс из фото», если не приложить своё фото."
+          hint="Используется в «Рилс из фото», если не приложить своё фото"
           fallbackEmoji="🧒"
         />
         <SamplePhoto
           slug="sample-parents"
           label="Родители по умолчанию"
-          hint="Используется в «Рилс из фото», если не приложить своё фото."
+          hint="Используется в «Рилс из фото», если не приложить своё фото"
           fallbackEmoji="👨‍👩‍👧"
         />
       </div>
@@ -281,8 +281,8 @@ export function ReelsPage() {
 
           <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-xs text-ink-3">
             {kind === 't2v'
-              ? 'По умолчанию используется каст сверху. Приложите свои фото, только если нужны другие лица.'
-              : 'Загрузите готовую картинку сцены — оживим её через PixVerse.'}
+              ? 'По умолчанию используется каст сверху. Приложите свои фото, только если нужны другие лица'
+              : 'Загрузите готовую картинку сцены - оживим её через PixVerse'}
           </p>
 
           <div className="space-y-4">
@@ -340,7 +340,7 @@ export function ReelsPage() {
 
           {reels.length === 0 ? (
             <Card>
-              <p className="text-ink-3">Роликов пока нет — запустите первую генерацию слева.</p>
+              <p className="text-ink-3">Роликов пока нет - запустите первую генерацию слева.</p>
             </Card>
           ) : (
             reels.map((r) => <ReelCard key={r.id} reel={r} onDelete={onDelete} />)

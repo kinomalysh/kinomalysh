@@ -33,7 +33,7 @@ export function assertProdSecrets() {
       throw new Error('JWT_SECRET must be set in production')
     }
     if (!env.CASHERA_API_KEY || !env.CASHERA_SECRET) {
-      console.warn('[env] CASHERA_API_KEY/CASHERA_SECRET не заданы — платежи отключены')
+      console.warn('[env] CASHERA_API_KEY/CASHERA_SECRET не заданы - платежи отключены')
     }
   }
 }

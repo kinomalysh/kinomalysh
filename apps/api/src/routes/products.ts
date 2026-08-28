@@ -362,10 +362,10 @@ export async function productRoutes(app: FastifyInstance) {
     const scene = await db.query.productScenes.findFirst({ where: eq(productScenes.id, id) })
     if (!scene) return reply.code(404).send({ error: 'Сцена не найдена' })
     if (body.approved && !scene.clipKey) {
-      return reply.code(409).send({ error: 'Сначала прогоните сцену — утверждать нечего' })
+      return reply.code(409).send({ error: 'Сначала прогоните сцену - утверждать нечего' })
     }
     if (body.approved && scene.voiceoverText?.trim() && !scene.voKey) {
-      return reply.code(409).send({ error: 'Нет озвучки — сгенерируйте её перед утверждением' })
+      return reply.code(409).send({ error: 'Нет озвучки - сгенерируйте её перед утверждением' })
     }
     if (!body.approved) {
       const orphans = [scene.approvedClipKey, scene.approvedVoKey].filter(

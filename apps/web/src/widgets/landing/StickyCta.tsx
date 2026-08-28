@@ -24,10 +24,10 @@ export function StickyCta() {
     >
       <div className="paper-strong flex items-center gap-3 rounded-3xl p-2.5 pl-4">
         <p className="hidden min-w-0 flex-1 text-xs leading-snug text-ink-800 sm:block">
-          Кастинг героя бесплатный — займёт пару минут
+          Кастинг героя бесплатный - займёт пару минут
         </p>
         <Button className="w-full sm:w-auto" onClick={() => navigate(ROUTES.create)}>
-          Загрузить фото — бесплатно
+          Загрузить фото - бесплатно
         </Button>
       </div>
     </div>

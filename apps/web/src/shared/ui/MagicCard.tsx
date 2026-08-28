@@ -62,7 +62,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
         toggle()
       }}
       aria-pressed={showHero}
-      aria-label={showHero ? 'нажмите — вернуть фото' : 'нажмите для магии'}
+      aria-label={showHero ? 'нажмите - вернуть фото' : 'нажмите для магии'}
       className="group relative block w-full cursor-pointer overflow-hidden rounded-[1.6rem] [container-type:inline-size]"
     >
       <img
@@ -140,7 +140,7 @@ export function MagicCard({ photoSrc, heroSrc }: MagicCardProps) {
       <span className="absolute inset-x-0 bottom-3 flex justify-center">
         <span className="flex items-center gap-1.5 rounded-full border-2 border-night-950 bg-cream px-3.5 py-1.5 text-xs font-bold text-night-950 shadow-[2px_3px_0_rgba(0,0,0,0.35)] transition-transform duration-200 group-hover:-translate-y-0.5 group-active:translate-y-0">
           <Sparkle weight="fill" className="h-3.5 w-3.5 text-mustard-deep" />
-          {showHero ? 'нажмите — вернуть фото' : 'нажмите для магии'}
+          {showHero ? 'нажмите - вернуть фото' : 'нажмите для магии'}
         </span>
       </span>
     </button>

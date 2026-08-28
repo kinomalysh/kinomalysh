@@ -47,7 +47,7 @@ function FalBalanceCard() {
               {data.balance.toLocaleString('en-US', { style: 'currency', currency: data.currency })}
             </p>
           ) : (
-            <p className="mt-1 text-2xl font-semibold text-ink-3">—</p>
+            <p className="mt-1 text-2xl font-semibold text-ink-3">-</p>
           )}
           {data?.username && <p className="text-xs text-ink-3">аккаунт {data.username}</p>}
         </div>
@@ -55,7 +55,7 @@ function FalBalanceCard() {
           Проверить
         </Button>
       </div>
-      {low && <p className="text-xs text-berry">Баланс на исходе — пополните fal.ai</p>}
+      {low && <p className="text-xs text-berry">Баланс на исходе - пополните fal.ai</p>}
       <ErrorText>{error}</ErrorText>
     </Card>
   )

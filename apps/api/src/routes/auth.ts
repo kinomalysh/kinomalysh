@@ -72,9 +72,9 @@ export async function authRoutes(app: FastifyInstance) {
     const otp = await db.query.emailOtps.findFirst({
       where: and(eq(emailOtps.email, body.email), gt(emailOtps.expiresAt, new Date())),
     })
-    if (!otp) return reply.code(400).send({ error: 'Код истёк — запросите новый' })
+    if (!otp) return reply.code(400).send({ error: 'Код истёк - запросите новый' })
     if (otp.attempts >= OTP_MAX_ATTEMPTS) {
-      return reply.code(429).send({ error: 'Слишком много попыток — запросите новый код' })
+      return reply.code(429).send({ error: 'Слишком много попыток - запросите новый код' })
     }
 
     if (otp.codeHash !== hashToken(body.code)) {
@@ -107,7 +107,7 @@ export async function authRoutes(app: FastifyInstance) {
         gt(emailOtps.createdAt, new Date(Date.now() - 60 * 1000)),
       ),
     })
-    if (recent) return reply.code(429).send({ error: 'Код уже отправлен — подождите минуту' })
+    if (recent) return reply.code(429).send({ error: 'Код уже отправлен - подождите минуту' })
     await createAndSendOtp(body.email, user.name)
     return { ok: true }
   })
@@ -120,7 +120,7 @@ export async function authRoutes(app: FastifyInstance) {
     }
     if (!user.emailVerified) {
       await createAndSendOtp(user.email, user.name)
-      return reply.code(403).send({ error: 'Подтвердите почту — код отправлен', needVerify: true })
+      return reply.code(403).send({ error: 'Подтвердите почту - код отправлен', needVerify: true })
     }
     const tokens = await issueTokens(app, user.id)
     return { user: publicUser(user), ...tokens }

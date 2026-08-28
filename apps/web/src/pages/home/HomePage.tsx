@@ -30,7 +30,7 @@ export function HomePage() {
         data={buildVideoLd({
           name: 'Фрагмент персональной сказки «Луна ждёт в гости»',
           description:
-            'Пример персонального мультфильма Огонька, где ребёнок становится главным героем истории про путешествие к луне.',
+            'Пример персонального мультфильма Киномалыша, где ребёнок становится главным героем истории про путешествие к луне',
           thumbnail: '/plots/sleep.webp',
           contentUrl: '/story-demo.mp4',
           uploadDate: siteConfig.contentDate,
@@ -51,7 +51,7 @@ export function HomePage() {
           Сегодня вечером сказка может быть про вашего ребёнка
         </h2>
         <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/70 lg:text-base">
-          Загрузите фото — через пару минут покажем три портрета героя. Бесплатно.
+          Загрузите фото - через пару минут покажем три портрета героя. Бесплатно
         </p>
         </div>
         <Button
@@ -59,7 +59,7 @@ export function HomePage() {
           className="mt-6 w-full shrink-0 sm:w-auto lg:mt-0"
           onClick={() => navigate(ROUTES.create)}
         >
-          Загрузить фото — бесплатно
+          Загрузить фото - бесплатно
         </Button>
         </div>
       </section>

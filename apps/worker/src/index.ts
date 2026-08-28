@@ -86,7 +86,7 @@ const castingWorker = new Worker<CastingJobData>(
       return
     }
 
-    if (!isStorageConfigured) throw new Error('S3 не настроен — кастинг не сохранить')
+    if (!isStorageConfigured) throw new Error('S3 не настроен - кастинг не сохранить')
     const keys: string[] = []
     for (const [index, url] of urls.entries()) {
       const key = `orders/${story.id}/casting-${story.castingAttempts}-${index}.jpg`
@@ -170,7 +170,7 @@ const adReelWorker = new Worker<AdReelJobData>(
           await uploadObject(resultKey, bytes, 'video/mp4')
         } catch (error) {
           resultKey = null
-          console.error(`[adreel] ${reel.id}: S3 upload failed, keeping fal url — ${String(error)}`)
+          console.error(`[adreel] ${reel.id}: S3 upload failed, keeping fal url - ${String(error)}`)
         }
       }
 

@@ -25,7 +25,7 @@ export function DemoReel() {
           </span>
           <span className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-ink-900/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-ink-800">
             <SpeakerSimpleHigh className="h-3.5 w-3.5" />
-            в полной версии — озвучка и музыка
+            в полной версии - озвучка и музыка
           </span>
         </figcaption>
       </figure>

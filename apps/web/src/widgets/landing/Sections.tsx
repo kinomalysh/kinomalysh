@@ -26,22 +26,22 @@ export function ChapterTitle({ chapter, title, id }: ChapterTitleProps) {
 export const STEPS = [
   {
     title: 'Выберите мультфильм',
-    text: 'Готовая история с озвучкой и музыкой. Остаётся добавить в неё героя.',
+    text: 'Готовая история с озвучкой и музыкой. Остаётся добавить в неё героя',
     note: 'сюжеты проверены редактором',
   },
   {
     title: 'Пришлите фото',
-    text: 'Одно светлое фото анфас — этого достаточно, чтобы нейросеть узнала вашего ребёнка.',
+    text: 'Одно светлое фото анфас - этого достаточно, чтобы нейросеть узнала вашего ребёнка',
     note: 'как на детсадовскую фотографию',
   },
   {
     title: 'Выберите двойника',
-    text: 'Нейросеть рисует три мультяшных портрета. Не похож — нарисуем ещё, тоже бесплатно.',
+    text: 'Нейросеть рисует три мультяшных портрета. Не похож - нарисуем ещё, тоже бесплатно',
     note: 'платить пока не нужно',
   },
   {
     title: 'Смотрите вместе',
-    text: 'Через 5–20 минут мультфильм с озвучкой ждёт на полке. Или книга — PDF плюс аудио.',
+    text: 'Через 5-20 минут мультфильм с озвучкой ждёт на полке. Или книга - PDF плюс аудио',
     note: 'и так каждый вечер, если захочется',
   },
 ]
@@ -53,7 +53,7 @@ export function Magic() {
       <ChapterTitle chapter="глава 1" title="Магия в одном фото" id="magic-heading" />
       <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800 lg:text-base">
         Нейросеть смотрит на фото и рисует мультяшного двойника: причёска, улыбка и любимая
-        футболка остаются на месте.
+        футболка остаются на месте
       </p>
       <div className="reveal mt-8 flex items-center justify-center gap-3 sm:gap-6 lg:mt-12 lg:gap-14">
         <figure className="w-[38%] max-w-52 rotate-[-2.5deg] lg:max-w-sm">
@@ -105,7 +105,7 @@ export function Magic() {
         </figure>
       </div>
       <p className="hand-note mx-auto mt-6 max-w-xs text-center text-lg lg:mt-8 lg:max-w-sm lg:text-xl">
-        похож или нет — решаете вы. портреты рисуем бесплатно
+        похож или нет - решаете вы. портреты рисуем бесплатно
       </p>
     </section>
   )
@@ -117,11 +117,11 @@ const REVIEWS = [
     author: 'Аня, мама Веры, 4 года',
   },
   {
-    text: 'Сын перестал воевать с зубной щёткой. Серьёзно, на третий день.',
+    text: 'Сын перестал воевать с зубной щёткой. Серьёзно, на третий день',
     author: 'Дмитрий, папа Марка, 3 года',
   },
   {
-    text: 'Отправила мультфильм бабушке — она пересматривала его пять раз',
+    text: 'Отправила мультфильм бабушке - она пересматривала его пять раз',
     author: 'Ольга, мама Сони, 6 лет',
   },
 ]
@@ -130,7 +130,7 @@ export function Reviews() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-label="Отзывы родителей" className="shell py-12 lg:py-16">
-      <p className="hand-note rotate-[-1deg] text-lg lg:text-xl">на полях — родители пишут:</p>
+      <p className="hand-note rotate-[-1deg] text-lg lg:text-xl">на полях - родители пишут:</p>
       <div className="mt-5 space-y-3 lg:mt-8 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
         {REVIEWS.map((review, i) => (
           <blockquote
@@ -197,7 +197,7 @@ export function Showcase() {
     <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 1" title="Какой вечер спасаем?" id="showcase-heading" />
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-800 lg:text-base">
-        Не «контент», а инструменты на вечер: уснуть без слёз, почистить зубы без войны, подружиться со своей злостью.
+        Не «контент», а инструменты на вечер: уснуть без слёз, почистить зубы без войны, подружиться со своей злостью
       </p>
       <div className="-mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 py-4 scroll-px-5 scrollbar-none lg:mx-0 lg:mt-10 lg:grid lg:grid-cols-3 lg:gap-7 lg:overflow-visible lg:px-0 xl:grid-cols-4">
         {featured.map((plot, i) => (

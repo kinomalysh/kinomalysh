@@ -9,8 +9,8 @@ export function NotFoundPage() {
   const { pathname } = useLocation()
 
   useSeoMeta({
-    title: 'Страница не найдена — Киномалыш',
-    description: 'Такой страницы на сайте «Киномалыш» нет. Вернитесь на главную или откройте блог.',
+    title: 'Страница не найдена - Киномалыш',
+    description: 'Такой страницы на сайте «Киномалыш» нет. Вернитесь на главную или откройте блог',
     path: pathname,
     noindex: true,
   })
@@ -23,8 +23,8 @@ export function NotFoundPage() {
           Такой страницы нет
         </h1>
         <p className="mt-4 max-w-md text-base leading-relaxed text-ink-800">
-          Возможно, ссылка устарела или в адресе опечатка. Сказки никуда не делись — они на главной,
-          и там же можно загрузить фото и бесплатно посмотреть кастинг героя.
+          Возможно, ссылка устарела или в адресе опечатка. Сказки никуда не делись - они на главной,
+          и там же можно загрузить фото и бесплатно посмотреть кастинг героя
         </p>
         <Button size="lg" className="mt-6 w-full sm:w-auto" onClick={() => navigate(ROUTES.home)}>
           На главную
@@ -39,7 +39,7 @@ export function NotFoundPage() {
               to={ROUTES.home}
               className="underline decoration-dashed underline-offset-4 hover:text-ember-600"
             >
-              Главная — мультфильм по фото ребёнка за 15 минут
+              Главная - мультфильм по фото ребёнка за 15 минут
             </Link>
           </li>
           <li>
@@ -47,7 +47,7 @@ export function NotFoundPage() {
               to={ROUTES.create}
               className="underline decoration-dashed underline-offset-4 hover:text-ember-600"
             >
-              Создать сказку — загрузить фото
+              Создать сказку - загрузить фото
             </Link>
           </li>
           <li>
@@ -55,7 +55,7 @@ export function NotFoundPage() {
               to="/blog"
               className="underline decoration-dashed underline-offset-4 hover:text-ember-600"
             >
-              Блог — о сказках, подарках и нейросетях
+              Блог - о сказках, подарках и нейросетях
             </Link>
           </li>
         </ul>

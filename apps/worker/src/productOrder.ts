@@ -39,7 +39,7 @@ async function withRetries<T>(label: string, attempts: number, task: () => Promi
     } catch (error) {
       if (error instanceof ContentPolicyError) throw error
       last = error
-      console.warn(`[order] ${label}: попытка ${attempt}/${attempts} не удалась — ${String(error)}`)
+      console.warn(`[order] ${label}: попытка ${attempt}/${attempts} не удалась - ${String(error)}`)
       if (attempt < attempts) await new Promise((r) => setTimeout(r, 5000 * attempt))
     }
   }
@@ -52,7 +52,7 @@ async function downloadToFile(key: string, dest: string): Promise<void> {
 
 function approvedClip(scene: Scene): string {
   if (!scene.approvedClipKey) {
-    throw new OrderFailedError(`сцена ${scene.position} не утверждена — сборка невозможна`, true)
+    throw new OrderFailedError(`сцена ${scene.position} не утверждена - сборка невозможна`, true)
   }
   return scene.approvedClipKey
 }
@@ -107,7 +107,7 @@ async function renderHeroClip(
   const existing = await db.query.storyScenes.findFirst({ where: rowFilter })
   if (!existing) throw new OrderFailedError(`нет строки рендера для сцены ${scene.id}`, true)
   if (existing.status === 'ready' && existing.clipKey) {
-    console.log(`[order] ${storyId}: сцена ${scene.position} уже отрисована — пропускаю`)
+    console.log(`[order] ${storyId}: сцена ${scene.position} уже отрисована - пропускаю`)
     return existing.clipKey
   }
 
@@ -138,7 +138,7 @@ async function renderHeroClip(
 }
 
 export async function assembleProductOrder(db: Db, storyId: string): Promise<void> {
-  if (!isStorageConfigured) throw new OrderFailedError('S3 не настроен — сборка невозможна', true)
+  if (!isStorageConfigured) throw new OrderFailedError('S3 не настроен - сборка невозможна', true)
 
   const story = await db.query.stories.findFirst({ where: eq(stories.id, storyId) })
   if (!story) throw new OrderFailedError(`заказ ${storyId} не найден`, true)

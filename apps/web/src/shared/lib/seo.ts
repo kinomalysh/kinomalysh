@@ -74,7 +74,7 @@ export function buildOrganizationLd() {
     url: siteConfig.url,
     logo: `${siteConfig.url}/logo-wordmark.png`,
     description: siteConfig.description,
-    slogan: 'Ваш ребёнок — герой мультфильма',
+    slogan: 'Ваш ребёнок - герой мультфильма',
     knowsAbout: [
       'Персональные мультфильмы по фото ребёнка',
       'Персонализированные детские сказки',
@@ -103,7 +103,7 @@ export function buildProductLd() {
     '@type': 'Product',
     name: 'Персональный мультфильм «Киномалыш»',
     description:
-      'Мультфильм на 2 минуты по одному фото ребёнка: ваш ребёнок становится главным героем. Кастинг героя бесплатный, готовый мультфильм — за 15 минут.',
+      'Мультфильм на 2 минуты по одному фото ребёнка: ваш ребёнок становится главным героем. Кастинг героя бесплатный, готовый мультфильм - за 15 минут',
     brand: { '@type': 'Brand', name: siteConfig.name },
     image: `${siteConfig.url}${siteConfig.ogImage}`,
     audience: { '@type': 'PeopleAudience', suggestedMinAge: 2, suggestedMaxAge: 10 },
@@ -124,7 +124,7 @@ export function buildHowToLd(steps: { title: string; text: string }[]) {
     '@type': 'HowTo',
     name: 'Как сделать персональный мультфильм по фото ребёнка',
     description:
-      'Четыре шага от фотографии до готового мультфильма, где ваш ребёнок — главный герой.',
+      'Четыре шага от фотографии до готового мультфильма, где ваш ребёнок - главный герой',
     totalTime: 'PT15M',
     estimatedCost: { '@type': 'MonetaryAmount', currency: 'RUB', value: siteConfig.price.video },
     step: steps.map((step, i) => ({

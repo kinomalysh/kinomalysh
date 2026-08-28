@@ -108,7 +108,7 @@ export function StepProduct() {
                       )}
                     </span>
                     <span className="hand-note text-base">
-                      {product.previewUrl ? 'наведите — посмотреть' : 'скоро'}
+                      {product.previewUrl ? 'наведите - посмотреть' : 'скоро'}
                     </span>
                   </span>
                 </div>

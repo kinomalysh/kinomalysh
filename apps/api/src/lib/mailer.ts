@@ -44,7 +44,7 @@ async function getTransporter(): Promise<Transporter | null> {
 export async function sendOtpEmail(to: string, name: string, code: string) {
   const mailer = await getTransporter()
   if (!mailer) {
-    console.log(`[mailer] SMTP не настроен — код для ${to}: ${code}`)
+    console.log(`[mailer] SMTP не настроен - код для ${to}: ${code}`)
     return
   }
   try {
@@ -59,8 +59,8 @@ async function deliver(mailer: Transporter, to: string, name: string, code: stri
   await mailer.sendMail({
     from: env.SMTP_FROM,
     to,
-    subject: `${code} — ваш код для входа в Киномалыш`,
-    text: `Здравствуйте, ${name}!\n\nВаш код подтверждения: ${code}\nОн действует 10 минут.\n\nЕсли вы не регистрировались в Киномалыше — просто проигнорируйте это письмо.`,
+    subject: `${code} - ваш код для входа в Киномалыш`,
+    text: `Здравствуйте, ${name}!\n\nВаш код подтверждения: ${code}\nОн действует 10 минут.\n\nЕсли вы не регистрировались в Киномалыше - просто проигнорируйте это письмо.`,
     html: renderOtpEmail(name, code),
   })
 }
@@ -105,13 +105,13 @@ export function renderOtpEmail(name: string, code: string): string {
           </table>
           <div style="font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#9a99b5;text-align:center;">
             Код действует 10 минут.<br/>
-            Если вы не регистрировались в Киномалыше — просто закройте это письмо,
+            Если вы не регистрировались в Киномалыше - просто закройте это письмо,
             ничего не произойдёт.
           </div>
         </td></tr>
         <tr><td align="center" style="padding-top:24px;">
           <div style="font-family:'Comic Sans MS',cursive;font-size:14px;color:#9a99b5;">
-            — сегодня вечером сказка может быть про вашего ребёнка —
+            - сегодня вечером сказка может быть про вашего ребёнка -
           </div>
           <div style="font-family:Arial,sans-serif;font-size:12px;color:#6b7190;margin-top:12px;">
             © Киномалыш · Поддержка: @kinomalysh_help

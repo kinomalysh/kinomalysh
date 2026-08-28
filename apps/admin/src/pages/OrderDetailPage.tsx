@@ -95,7 +95,7 @@ export function OrderDetailPage() {
         <div>
           <h1 className="font-display text-3xl">{story.childName ?? 'Без имени'}</h1>
           <p className="text-sm text-ink-3">
-            {story.user?.email} · сюжет {story.plotId ?? '—'} · {story.format ?? '—'}
+            {story.user?.email} · сюжет {story.plotId ?? '-'} · {story.format ?? '-'}
           </p>
         </div>
         <Badge value={story.status} />
@@ -146,7 +146,7 @@ export function OrderDetailPage() {
             <h2 className="text-lg font-semibold">Промпты сцен</h2>
             <p className="text-xs text-ink-3">
               {story.promptsFromPlot
-                ? 'Значения по умолчанию из сюжета — сохраните, чтобы зафиксировать в БД'
+                ? 'Значения по умолчанию из сюжета - сохраните, чтобы зафиксировать в БД'
                 : 'Отредактировано и сохранено в БД'}
             </p>
           </div>

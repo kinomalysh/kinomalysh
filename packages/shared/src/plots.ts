@@ -15,9 +15,9 @@ export const PLOTS: PlotDef[] = [
   {
     id: 'emotions',
     title: 'Большие эмоции',
-    tagline: 'Про злость, грусть и радость — через образы погоды',
+    tagline: 'Про злость, грусть и радость - через образы погоды',
     benefit: 'Учит понимать чувства',
-    ages: '3–7',
+    ages: '3-7',
     premium: false,
     scenePrompts: [
       `The hero child meets a tiny grumpy red thundercloud on a moonlit hill, ${STYLE}`,
@@ -31,7 +31,7 @@ export const PLOTS: PlotDef[] = [
     title: 'Луна ждёт в гости',
     tagline: 'Мягкое путешествие по звёздному небу перед сном',
     benefit: 'Помогает уснуть',
-    ages: '2–6',
+    ages: '2-6',
     premium: false,
     scenePrompts: [
       `The hero child boards a little red paper airplane at night, ${STYLE}`,
@@ -45,7 +45,7 @@ export const PLOTS: PlotDef[] = [
     title: 'Миссия Зубной Щётки',
     tagline: 'Весёлая охота на микробов утром и вечером',
     benefit: 'Приучает чистить зубы',
-    ages: '2–6',
+    ages: '2-6',
     premium: false,
     scenePrompts: [
       `The hero child receives a glowing magic toothbrush like a knight sword, ${STYLE}`,
@@ -59,7 +59,7 @@ export const PLOTS: PlotDef[] = [
     title: 'Великий исследователь',
     tagline: 'Обычный дом превращается в мир открытий',
     benefit: 'Развивает любознательность',
-    ages: '3–8',
+    ages: '3-8',
     premium: false,
     scenePrompts: [
       `The hero child in a paper pirate hat holds a flashlight in a dark living room, ${STYLE}`,
@@ -73,7 +73,7 @@ export const PLOTS: PlotDef[] = [
     title: 'Золотые помощники',
     tagline: 'Уборка становится супергеройской миссией',
     benefit: 'Учит помогать по дому',
-    ages: '3–8',
+    ages: '3-8',
     premium: false,
     scenePrompts: [
       `The hero child puts on a superhero cape made of a striped towel, ${STYLE}`,
@@ -87,7 +87,7 @@ export const PLOTS: PlotDef[] = [
     title: 'Звёздный защитник',
     tagline: 'Эпическое приключение с полётами и превращениями',
     benefit: 'Супергеройский сюжет',
-    ages: '5–10',
+    ages: '5-10',
     premium: true,
     scenePrompts: [
       `The hero child in an astronaut super-suit launches into deep space, ${STYLE}`,

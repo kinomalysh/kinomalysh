@@ -42,7 +42,7 @@ function SeoLanding({ page }: { page: SeoPage }) {
         <h1 className="mt-1 font-display text-hero text-ink-900 text-balance">{page.h1}</h1>
         <p className="mt-4 max-w-md text-base leading-relaxed text-ink-800">{page.lead}</p>
         <Button size="lg" className="mt-6 w-full sm:w-auto" onClick={() => navigate(ROUTES.create)}>
-          Загрузить фото — бесплатно
+          Загрузить фото - бесплатно
         </Button>
       </header>
 

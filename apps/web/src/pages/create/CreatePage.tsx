@@ -60,7 +60,7 @@ export function CreatePage() {
               </div>
               <Progress
                 value={((stepIndex + 1) / STEP_ORDER.length) * 100}
-                label={`${STEP_TITLES[step]} — шаг ${stepIndex + 1} из ${STEP_ORDER.length}`}
+                label={`${STEP_TITLES[step]} - шаг ${stepIndex + 1} из ${STEP_ORDER.length}`}
               />
             </div>
             <button
@@ -163,7 +163,7 @@ function SummaryRow({ label, value }: SummaryRowProps) {
           {value}
         </span>
       ) : (
-        <span className="text-ink-500/60">—</span>
+        <span className="text-ink-500/60">-</span>
       )}
     </li>
   )

@@ -68,7 +68,7 @@ const STAGE_LABEL: Record<string, string> = {
 const STAGE_HINT: Record<string, string> = {
   queued: 'Ждём свободный слот воркера',
   framing: 'nano-banana рисует первый кадр по фото ребёнка',
-  animating: 'PixVerse оживляет кадр — это самый долгий шаг, 2–5 минут',
+  animating: 'PixVerse оживляет кадр - это самый долгий шаг, 2-5 минут',
   generating: 'ElevenLabs синтезирует речь',
 }
 
@@ -285,11 +285,11 @@ function SceneCard({
           </Field>
         </div>
         <div className="space-y-3">
-          <Field label="Промпт генерации (сцена) — мальчик / по умолчанию">
+          <Field label="Промпт генерации (сцена) - мальчик / по умолчанию">
             <Textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
           </Field>
           {kind === 'hero' && (
-            <Field label="Промпт генерации — девочка (необязательно)">
+            <Field label="Промпт генерации - девочка (необязательно)">
               <Textarea
                 rows={3}
                 value={promptFemale}
@@ -298,14 +298,14 @@ function SceneCard({
               />
               <p className="mt-1 text-xs text-ink-3">
                 Заполните, если промпт по умолчанию описывает внешность/пол ребёнка текстом (например
-                «a little boy») — иначе модель может проигнорировать фото клиентки.
+                «a little boy») - иначе модель может проигнорировать фото клиентки
               </p>
             </Field>
           )}
-          <Field label="Текст озвучки — мальчик / по умолчанию">
+          <Field label="Текст озвучки - мальчик / по умолчанию">
             <Textarea rows={2} value={vo} onChange={(e) => setVo(e.target.value)} placeholder="[warmly] …" />
             <p className="mt-1 text-xs text-ink-3">
-              Имя ребёнка — плейсхолдером с падежом:{' '}
+              Имя ребёнка - плейсхолдером с падежом:{' '}
               <code className="text-gold">{'{имя}'}</code>{' '}
               <code className="text-gold">{'{имя:род}'}</code>{' '}
               <code className="text-gold">{'{имя:дат}'}</code>{' '}
@@ -316,13 +316,13 @@ function SceneCard({
             </p>
             {scene.personalized && (
               <p className="mt-1 text-xs text-accent">
-                Сцена персональная: озвучка синтезируется под каждого клиента, а не берётся общей.
-                Пример ниже — на тестовом имени.
+                Сцена персональная: озвучка синтезируется под каждого клиента, а не берётся общей
+                Пример ниже - на тестовом имени
               </p>
             )}
           </Field>
           {kind === 'hero' && (
-            <Field label="Текст озвучки — девочка (необязательно)">
+            <Field label="Текст озвучки - девочка (необязательно)">
               <Textarea
                 rows={2}
                 value={voFemale}
@@ -330,7 +330,7 @@ function SceneCard({
                 placeholder="Пусто = берётся текст по умолчанию"
               />
               <p className="mt-1 text-xs text-ink-3">
-                Заполните, если в тексте есть род глаголов/местоимений («он вздыхал») — плейсхолдер{' '}
+                Заполните, если в тексте есть род глаголов/местоимений («он вздыхал») - плейсхолдер{' '}
                 <code className="text-gold">{'{имя}'}</code> сам род не меняет.
               </p>
             </Field>
@@ -413,8 +413,8 @@ function SceneCard({
           </div>
           {scene.kind === 'hero' && (
             <p className="mt-3 text-xs text-ink-3">
-              Клиенту сцена соберётся заново по его фото — здесь пример на тестовом ребёнке,
-              он подтверждает, что промпт проходит фильтр и даёт нужный результат.
+              Клиенту сцена соберётся заново по его фото - здесь пример на тестовом ребёнке,
+              он подтверждает, что промпт проходит фильтр и даёт нужный результат
             </p>
           )}
         </div>
@@ -423,7 +423,7 @@ function SceneCard({
       {(scene.clipUrl || scene.voUrl) && !scene.isLatestApproved && (
         <div className="rounded-xl border border-line bg-surface-2/40 p-4">
           <p className="mb-3 text-sm font-semibold">
-            {approved ? 'Новый прогон — сравните с утверждённым' : 'Последний прогон'}
+            {approved ? 'Новый прогон - сравните с утверждённым' : 'Последний прогон'}
           </p>
           <div className="flex flex-wrap items-start gap-4">
             {scene.clipUrl && (
@@ -446,7 +446,7 @@ function SceneCard({
             </Button>
             <span className="text-xs text-ink-3">
               {approved
-                ? 'Заменит утверждённый пример — именно он идёт клиентам'
+                ? 'Заменит утверждённый пример - именно он идёт клиентам'
                 : 'Без утверждения продукт не выкатить'}
             </span>
           </div>
@@ -637,7 +637,7 @@ export function ProductDetailPage() {
       <SamplePhoto
         slug="sample-child"
         label="Тестовое фото ребёнка"
-        hint="Нужно для превью геройских сцен. Одно на всю студию."
+        hint="Нужно для превью геройских сцен. Одно на всю студию"
         fallbackEmoji="🙂"
       />
 

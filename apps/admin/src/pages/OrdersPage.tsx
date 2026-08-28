@@ -93,10 +93,10 @@ export function OrdersPage() {
                 <tr key={s.id} className="border-b border-line/50 last:border-0 hover:bg-surface-2/40">
                   <td className="px-5 py-3">
                     <Link to={`/orders/${s.id}`} className="font-medium text-ink hover:text-gold">
-                      {s.childName ?? '—'}
+                      {s.childName ?? '-'}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-ink-2">{s.userEmail ?? '—'}</td>
+                  <td className="px-5 py-3 text-ink-2">{s.userEmail ?? '-'}</td>
                   <td className="px-5 py-3">
                     <Badge value={s.status} />
                   </td>

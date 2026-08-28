@@ -78,7 +78,7 @@ export function ProductsPage() {
         <p className="text-berry">{error}</p>
       ) : !data || data.products.length === 0 ? (
         <Card>
-          <p className="text-ink-3">Продуктов пока нет — создайте первый.</p>
+          <p className="text-ink-3">Продуктов пока нет - создайте первый.</p>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
