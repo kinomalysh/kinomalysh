@@ -11,6 +11,7 @@ import {
   chooseAvatarSchema,
   CONSENT_VERSION,
   daysLeft,
+  MAX_CASTING_ATTEMPTS,
   getPlotDef,
   storyDetailsSchema,
   storyPrice,
@@ -78,9 +79,10 @@ export async function storyRoutes(app: FastifyInstance) {
       .insert(stories)
       .values({
         userId: req.userId,
-        status: 'awaiting_payment',
+        status: 'casting',
         photoPath: saved,
         productId: product.id,
+        castingAttempts: 1,
         childName: parsed.data.childName,
         gender: parsed.data.gender,
         tokensCost: product.priceTokens,
@@ -88,6 +90,7 @@ export async function storyRoutes(app: FastifyInstance) {
         consentAt: new Date(),
       })
       .returning()
+    await castingQueue.add('casting', { storyId: story.id })
     return reply.code(201).send({ story: await toDto(story) })
   })
 
@@ -132,15 +135,22 @@ export async function storyRoutes(app: FastifyInstance) {
     const story = await findOwn(req.userId, (req.params as { id: string }).id)
     if (!story) return reply.code(404).send({ error: 'Сказка не найдена' })
     if (story.status !== 'awaiting_choice') {
-      return reply.code(409).send({ error: 'Кастинг ещё не готов' })
+      return reply.code(409).send({ error: 'Портреты ещё не готовы' })
     }
-    if (body.avatarIndex >= story.avatars.length) {
+
+    const variants = story.productId ? story.castingKeys : story.avatars
+    if (body.avatarIndex >= variants.length) {
       return reply.code(400).send({ error: 'Такого варианта нет' })
     }
 
     const [updated] = await db
       .update(stories)
-      .set({ chosenAvatar: body.avatarIndex, status: 'awaiting_details', updatedAt: new Date() })
+      .set({
+        chosenAvatar: body.avatarIndex,
+        chosenCastingKey: story.productId ? variants[body.avatarIndex] : null,
+        status: story.productId ? 'awaiting_payment' : 'awaiting_details',
+        updatedAt: new Date(),
+      })
       .where(eq(stories.id, story.id))
       .returning()
     return { story: await toDto(updated) }
@@ -152,9 +162,18 @@ export async function storyRoutes(app: FastifyInstance) {
     if (story.status !== 'awaiting_choice') {
       return reply.code(409).send({ error: 'Перегенерация доступна после кастинга' })
     }
+    if (story.productId && story.castingAttempts > MAX_CASTING_ATTEMPTS) {
+      return reply.code(409).send({ error: 'Бесплатные перерисовки закончились' })
+    }
     await db
       .update(stories)
-      .set({ status: 'casting', avatars: [], updatedAt: new Date() })
+      .set({
+        status: 'casting',
+        avatars: [],
+        castingKeys: [],
+        castingAttempts: story.castingAttempts + 1,
+        updatedAt: new Date(),
+      })
       .where(eq(stories.id, story.id))
     await castingQueue.add('casting', { storyId: story.id })
     return { ok: true }
@@ -267,7 +286,15 @@ async function findOwn(userId: string, id: string) {
 }
 
 export interface OrderProgress {
-  stage: 'awaiting_payment' | 'queued' | 'rendering' | 'assembling' | 'ready' | 'failed' | 'expired'
+  stage:
+    | 'casting'
+    | 'awaiting_payment'
+    | 'queued'
+    | 'rendering'
+    | 'assembling'
+    | 'ready'
+    | 'failed'
+    | 'expired'
   done: number
   total: number
   percent: number
@@ -275,6 +302,9 @@ export interface OrderProgress {
 
 async function buildProgress(story: Story): Promise<OrderProgress | null> {
   if (!story.productId) return null
+  if (story.status === 'casting' || story.status === 'awaiting_choice') {
+    return { stage: 'casting', done: 0, total: 0, percent: 0 }
+  }
   if (story.status === 'awaiting_payment') {
     return { stage: 'awaiting_payment', done: 0, total: 0, percent: 0 }
   }
@@ -296,6 +326,11 @@ async function buildProgress(story: Story): Promise<OrderProgress | null> {
   const stage = total > 0 && done >= total ? 'assembling' : done > 0 ? 'rendering' : 'queued'
   const percent = total === 0 ? 5 : Math.min(95, Math.round((done / total) * 90) + 5)
   return { stage, done, total, percent }
+}
+
+async function presignAll(keys: string[]): Promise<string[]> {
+  if (!isStorageConfigured || keys.length === 0) return []
+  return Promise.all(keys.map((key) => presignGet(key, { expiresIn: 3600 })))
 }
 
 async function toDto(story: Story) {
@@ -322,6 +357,8 @@ async function toDto(story: Story) {
     tokensCost: story.tokensCost,
     avatars: story.avatars,
     chosenAvatar: story.chosenAvatar,
+    castingUrls: await presignAll(story.castingKeys),
+    castingAttemptsLeft: Math.max(0, MAX_CASTING_ATTEMPTS + 1 - story.castingAttempts),
     scenes: story.scenes,
     resultUrl,
     progress: await buildProgress(story),

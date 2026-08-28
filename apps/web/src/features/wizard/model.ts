@@ -1,12 +1,19 @@
 import { create } from 'zustand'
 import type { CatalogProduct } from '@/entities/catalog/model'
-import { createProductOrder, payOrder, type Order } from '@/entities/order/model'
+import {
+  chooseAvatar,
+  createProductOrder,
+  fetchOrder,
+  payOrder,
+  recast,
+  type Order,
+} from '@/entities/order/model'
 import { ApiError } from '@/shared/api/client'
 
-export type WizardStep = 'product' | 'hero' | 'photo' | 'payment'
+export type WizardStep = 'product' | 'hero' | 'photo' | 'casting' | 'payment'
 export type Gender = 'male' | 'female'
 
-export const STEP_ORDER: WizardStep[] = ['product', 'hero', 'photo', 'payment']
+export const STEP_ORDER: WizardStep[] = ['product', 'hero', 'photo', 'casting', 'payment']
 
 export type StepDirection = 'forward' | 'back'
 
@@ -14,6 +21,7 @@ export const STEP_TITLES: Record<WizardStep, string> = {
   product: 'Выбор мультфильма',
   hero: 'Кто главный герой',
   photo: 'Фотография',
+  casting: 'Выбор героя',
   payment: 'Оплата',
 }
 
@@ -36,6 +44,9 @@ interface WizardState {
   setPhoto: (file: File | null) => void
   setConsent: (key: 'consentGuardian' | 'consentTransfer', value: boolean) => void
   submitOrder: () => Promise<Order | null>
+  refreshOrder: () => Promise<void>
+  pickVariant: (index: number) => Promise<void>
+  askAnother: () => Promise<void>
   pay: () => Promise<Order | null>
   goBack: () => void
   clearError: () => void
@@ -92,11 +103,45 @@ export const useWizard = create<WizardState>((set, get) => ({
         childName: childName.trim(),
         gender,
       })
-      set({ order, step: 'payment', direction: 'forward', submitting: false })
+      set({ order, step: 'casting', direction: 'forward', submitting: false })
       return order
     } catch (error) {
       set({ submitting: false, error: messageOf(error) })
       return null
+    }
+  },
+
+  refreshOrder: async () => {
+    const current = get().order
+    if (!current) return
+    try {
+      set({ order: await fetchOrder(current.id) })
+    } catch {
+      /* опрос статуса не должен ронять экран */
+    }
+  },
+
+  pickVariant: async (index) => {
+    const current = get().order
+    if (!current) return
+    set({ submitting: true, error: null })
+    try {
+      const order = await chooseAvatar(current.id, index)
+      set({ order, step: 'payment', direction: 'forward', submitting: false })
+    } catch (error) {
+      set({ submitting: false, error: messageOf(error) })
+    }
+  },
+
+  askAnother: async () => {
+    const current = get().order
+    if (!current) return
+    set({ submitting: true, error: null })
+    try {
+      await recast(current.id)
+      set({ order: await fetchOrder(current.id), submitting: false })
+    } catch (error) {
+      set({ submitting: false, error: messageOf(error) })
     }
   },
 

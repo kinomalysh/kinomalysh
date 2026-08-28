@@ -45,6 +45,9 @@ export const stories = pgTable('stories', {
   photoPurgedAt: timestamp('photo_purged_at', { withTimezone: true }),
   consentVersion: varchar('consent_version', { length: 16 }),
   consentAt: timestamp('consent_at', { withTimezone: true }),
+  castingKeys: jsonb('casting_keys').$type<string[]>().notNull().default([]),
+  castingAttempts: integer('casting_attempts').notNull().default(0),
+  chosenCastingKey: text('chosen_casting_key'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

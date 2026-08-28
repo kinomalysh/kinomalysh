@@ -167,7 +167,7 @@ export function StepPhoto({ requireAuth, onSubmitted }: StepPhotoProps) {
         loading={submitting}
         onClick={() => void handleSubmit()}
       >
-        Дальше - оплата
+        Нарисовать героя
       </Button>
     </div>
   )

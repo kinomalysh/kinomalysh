@@ -49,3 +49,10 @@ export function buildProductScenePrompt(prompt: string): string {
 
 export const ELEVEN_VOICE_LUNYA = 'rSfuQoQ3FY8SVKeraMAp'
 export const ELEVEN_MODEL = 'eleven_v3'
+
+export const CASTING_VARIANTS = 3
+export const MAX_CASTING_ATTEMPTS = 2
+
+export function castingCostUsd(variants = CASTING_VARIANTS): number {
+  return Number((variants * 0.13).toFixed(2))
+}

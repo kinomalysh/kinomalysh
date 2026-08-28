@@ -1,0 +1,4 @@
+ALTER TABLE stories
+  ADD COLUMN IF NOT EXISTS casting_keys JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS casting_attempts INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS chosen_casting_key TEXT;

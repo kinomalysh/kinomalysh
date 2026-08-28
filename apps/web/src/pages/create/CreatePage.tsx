@@ -9,6 +9,7 @@ import { useSession } from '@/entities/session/model'
 import { StepProduct } from '@/features/wizard/steps/StepProduct'
 import { StepHero } from '@/features/wizard/steps/StepHero'
 import { StepPhoto } from '@/features/wizard/steps/StepPhoto'
+import { StepCasting } from '@/features/wizard/steps/StepCasting'
 import { StepPayment } from '@/features/wizard/steps/StepPayment'
 
 export function CreatePage() {
@@ -69,6 +70,7 @@ export function CreatePage() {
         {step === 'product' && <StepProduct />}
         {step === 'hero' && <StepHero />}
         {step === 'photo' && <StepPhoto requireAuth={requireAuth} onSubmitted={() => undefined} />}
+        {step === 'casting' && <StepCasting />}
         {step === 'payment' && (
           <StepPayment
             onPaid={(orderId) => {

@@ -11,6 +11,7 @@ export type OrderStatus =
   | 'expired'
 
 export type OrderStage =
+  | 'casting'
   | 'awaiting_payment'
   | 'queued'
   | 'rendering'
@@ -29,6 +30,8 @@ export interface OrderProgress {
 export interface Order {
   id: string
   status: OrderStatus
+  castingUrls: string[]
+  castingAttemptsLeft: number
   productId: string | null
   product: { slug: string; title: string } | null
   childName: string | null
@@ -51,7 +54,7 @@ export interface NewOrderInput {
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  casting: 'Кастинг героя',
+  casting: 'Рисуем портреты',
   awaiting_choice: 'Ждёт вашего выбора',
   awaiting_details: 'Ждёт деталей',
   awaiting_payment: 'Ждёт оплаты',
@@ -62,6 +65,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 }
 
 export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
+  casting: 'Рисуем портреты героя',
   awaiting_payment: 'Ждём оплату',
   queued: 'Заказ в очереди',
   rendering: 'Рисуем сцены с вашим ребёнком',
@@ -104,4 +108,16 @@ export async function payOrder(id: string): Promise<Order> {
 
 export async function deleteOrder(id: string): Promise<void> {
   await api(`/stories/${id}`, { method: 'DELETE' })
+}
+
+export async function chooseAvatar(id: string, avatarIndex: number): Promise<Order> {
+  const { story } = await api<{ story: Order }>(`/stories/${id}/avatar`, {
+    method: 'POST',
+    body: { avatarIndex },
+  })
+  return story
+}
+
+export async function recast(id: string): Promise<void> {
+  await api(`/stories/${id}/recast`, { method: 'POST' })
 }

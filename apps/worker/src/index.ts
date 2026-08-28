@@ -7,6 +7,7 @@ import {
   getPlotDef,
   hasNamePlaceholder,
   renderVoiceoverText,
+  CASTING_VARIANTS,
   QUEUE_ADREEL,
   QUEUE_CASTING,
   QUEUE_HOUSEKEEPING,
@@ -76,10 +77,24 @@ const castingWorker = new Worker<CastingJobData>(
     const story = await db.query.stories.findFirst({ where: eq(stories.id, job.data.storyId) })
     if (!story?.photoPath) throw new Error(`story ${job.data.storyId} has no photo`)
 
-    console.log(`[casting] story ${story.id}: generating avatars`)
-    const avatars = await generateAvatars(story.photoPath, 3)
-    await setStatus(story.id, { status: 'awaiting_choice', avatars })
-    console.log(`[casting] story ${story.id}: done`)
+    console.log(`[casting] заказ ${story.id}: рисую ${CASTING_VARIANTS} портрета`)
+    const urls = await generateAvatars(story.photoPath, CASTING_VARIANTS)
+
+    if (!story.productId) {
+      await setStatus(story.id, { status: 'awaiting_choice', avatars: urls })
+      console.log(`[casting] заказ ${story.id}: готово`)
+      return
+    }
+
+    if (!isStorageConfigured) throw new Error('S3 не настроен — кастинг не сохранить')
+    const keys: string[] = []
+    for (const [index, url] of urls.entries()) {
+      const key = `orders/${story.id}/casting-${story.castingAttempts}-${index}.jpg`
+      await uploadObject(key, await downloadBytes(url), 'image/jpeg')
+      keys.push(key)
+    }
+    await setStatus(story.id, { status: 'awaiting_choice', castingKeys: keys })
+    console.log(`[casting] заказ ${story.id}: ${keys.length} портрета сохранены`)
   },
   { connection, concurrency: 3 },
 )
