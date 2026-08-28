@@ -173,7 +173,7 @@ export function ProfilePage() {
               )}
             >
               {pack.badge && (
-                <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-[9px] font-bold text-on-poppy">
+                <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-xs font-bold text-on-poppy">
                   {pack.badge}
                 </span>
               )}
@@ -183,7 +183,7 @@ export function ProfilePage() {
               </span>
               <span
                 className={cn(
-                  'mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold',
+                  'mt-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-bold',
                   selected === pack.id ? 'bg-mustard text-night-950' : 'bg-paper-shade text-ink-800',
                 )}
               >
@@ -203,7 +203,7 @@ export function ProfilePage() {
                 onClick={() => setMethod(option.id)}
               >
                 <span>{option.label}</span>
-                <span className="text-[10px] font-normal opacity-70">{option.hint}</span>
+                <span className="text-xs font-normal opacity-70">{option.hint}</span>
               </Chip>
             ))}
           </div>

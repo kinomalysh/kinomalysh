@@ -9,6 +9,7 @@ import { buildOrganizationLd, buildWebsiteLd } from '@/shared/lib/seo'
 import { asset } from '@/shared/lib/asset'
 import { useSession } from '@/entities/session/model'
 import { formatTokens } from '@/shared/lib/format'
+import { Button } from '@/shared/ui/Button'
 
 const TABS = [
   { to: ROUTES.home, label: 'Сказки', icon: Moon, end: true },
@@ -78,7 +79,7 @@ export function AppShell() {
             {user ? (
               <NavLink
                 to={ROUTES.profile}
-                className="paper hidden items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-ink-900 transition-transform duration-150 hover:-translate-y-0.5 lg:inline-flex"
+                className="paper hidden min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold text-ink-900 transition-transform duration-150 hover:-translate-y-0.5 lg:inline-flex"
               >
                 <Sparkle weight="fill" className="h-4 w-4 text-mustard" />
                 {formatTokens(user.balance)}
@@ -86,20 +87,20 @@ export function AppShell() {
             ) : (
               <NavLink
                 to={ROUTES.auth}
-                className="hidden text-sm font-semibold text-ink-800 transition-colors hover:text-ink-900 lg:inline-flex"
+                className="hidden min-h-11 items-center px-2 text-sm font-semibold text-ink-800 transition-colors hover:text-ink-900 lg:inline-flex"
               >
                 Войти
               </NavLink>
             )}
 
-            <button
-              type="button"
+            <Button
+              size="sm"
+              className="hidden shrink-0 sm:inline-flex"
               onClick={() => navigate(ROUTES.create)}
-              className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-ink-900 bg-poppy px-4 py-2 text-sm font-bold text-on-poppy shadow-[2px_3px_0_rgba(0,0,0,0.45)] transition-all duration-150 hover:bg-poppy-deep active:translate-y-0.5 active:shadow-[1px_1px_0_rgba(0,0,0,0.45)] sm:inline-flex"
             >
               <Sparkle weight="fill" className="h-4 w-4" />
               Создать сказку
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -136,7 +137,7 @@ export function AppShell() {
                       </span>
                       <span
                         className={cn(
-                          'text-[11px] font-bold',
+                          'text-xs font-bold',
                           isActive ? 'text-ink-900' : 'text-ink-500',
                         )}
                       >
@@ -154,7 +155,7 @@ export function AppShell() {
                 end={tab.end}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-w-16 flex-1 flex-col items-center gap-1 rounded-2xl border-2 py-2 text-[11px] font-semibold transition-all duration-200',
+                    'flex min-w-16 flex-1 flex-col items-center gap-1 rounded-2xl border-2 py-2 text-xs font-semibold transition-all duration-200',
                     isActive
                       ? 'rotate-[-2deg] border-ink-900 bg-mustard text-night-950 shadow-[2px_3px_0_rgba(0,0,0,0.4)]'
                       : 'border-transparent text-ink-500 hover:text-ink-900',

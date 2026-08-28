@@ -120,7 +120,7 @@ export function LibraryPage() {
                     )}
                     <span
                       className={cn(
-                        'mt-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                        'mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide',
                         ready
                           ? 'bg-leaf/12 text-leaf'
                           : order.status === 'failed' || order.status === 'expired'

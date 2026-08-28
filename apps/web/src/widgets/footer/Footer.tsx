@@ -14,7 +14,7 @@ export function Footer() {
     <footer className="mt-4 border-t-2 border-dashed border-ink-900/15 pb-28 pt-10 lg:pb-16 lg:pt-16">
       <div className="shell">
       <p className="hand-note text-center text-lg rotate-[-1deg]">
-        - конец. но сказки только начинаются -
+        конец. но сказки только начинаются
       </p>
 
       <div className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
@@ -33,7 +33,7 @@ export function Footer() {
               <li key={page.slug}>
                 <Link
                   to={`/${page.slug}`}
-                  className="text-sm text-ink-800 underline decoration-ink-900/25 decoration-dashed underline-offset-4 transition-colors hover:text-poppy hover:decoration-poppy/50"
+                  className="text-sm text-ink-800 underline decoration-ink-900/25 decoration-dashed underline-offset-4 transition-colors hover:text-poppy hover:decoration-poppy/50 inline-flex min-h-9 items-center"
                 >
                   {page.navLabel}
                 </Link>
@@ -77,7 +77,7 @@ export function Footer() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-sm text-ink-800 underline decoration-ink-900/25 decoration-dashed underline-offset-4 transition-colors hover:text-poppy hover:decoration-poppy/50"
+                    className="text-sm text-ink-800 underline decoration-ink-900/25 decoration-dashed underline-offset-4 transition-colors hover:text-poppy hover:decoration-poppy/50 inline-flex min-h-9 items-center"
                   >
                     {link.label}
                   </Link>
@@ -88,7 +88,7 @@ export function Footer() {
         </div>
       </div>
 
-      <p className="mt-10 text-center text-[12px] text-ink-500">
+      <p className="mt-10 text-center text-xs text-ink-500">
         © 2026 {BRAND} · Сделано с теплом для вечерних ритуалов
       </p>
       </div>

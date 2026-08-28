@@ -12,7 +12,7 @@ export function Hero() {
     <section aria-labelledby="hero-heading" className="shell pt-6 pb-14 md:pt-12 lg:pt-14 lg:pb-20">
       <div className="md:grid md:grid-cols-[1fr_minmax(280px,340px)] md:items-center md:gap-10 lg:grid-cols-[1.05fr_minmax(380px,540px)] lg:gap-16">
         <div>
-          <p className="hand-note rotate-[-1deg] text-xl animate-settle lg:text-2xl">сегодня вечером -</p>
+          <p className="hand-note rotate-[-1deg] text-lg animate-settle lg:text-xl">сегодня вечером</p>
           <h1
             id="hero-heading"
             className="mt-1 font-display text-hero text-ink-900 text-balance animate-settle"
@@ -50,7 +50,7 @@ export function Hero() {
       <button
         type="button"
         onClick={() => document.getElementById('demo-reel')?.scrollIntoView({ behavior: 'smooth' })}
-        className="mt-14 flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink-800 transition-colors hover:text-poppy lg:mt-20"
+        className="mt-14 flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-ink-800 transition-colors hover:text-poppy lg:mt-20"
       >
         <ArrowDown className="h-4 w-4" />
         Посмотреть фрагмент сказки

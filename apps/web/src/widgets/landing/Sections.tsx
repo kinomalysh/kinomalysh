@@ -170,7 +170,7 @@ export function HowItWorks() {
             <span
               aria-hidden
               className={cn(
-                'absolute -left-[13px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink-900 text-[11px] font-bold',
+                'absolute -left-[13px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-ink-900 text-xs font-bold',
                 'lg:left-0 lg:-top-[13px] lg:h-7 lg:w-7 lg:text-xs',
                 i % 2 === 0 ? 'bg-mustard text-night-950' : 'bg-poppy text-on-poppy',
               )}
@@ -221,7 +221,7 @@ export function Showcase() {
                 loading={i > 1 ? 'lazy' : 'eager'}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <span className="relative z-10 rounded-full bg-night-950/70 px-2.5 py-1 text-[11px] font-semibold text-cream">
+              <span className="relative z-10 rounded-full bg-night-950/70 px-2.5 py-1 text-xs font-semibold text-cream">
                 {plot.premium ? '≈3 мин' : '≈2 мин'}
               </span>
               <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-cream/95 text-night-950 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
@@ -233,10 +233,10 @@ export function Showcase() {
             </h3>
             <p className="mt-1 px-1 text-xs leading-relaxed text-ink-800">{plot.tagline}</p>
             <p className="mt-auto flex items-center justify-between px-1 pb-1 pt-3">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-ink-500">
+              <span className="text-xs font-bold uppercase tracking-wide text-ink-500">
                 {plot.ages} лет
               </span>
-              <span className="text-[11px] font-semibold text-leaf">{plot.benefit}</span>
+              <span className="text-xs font-semibold text-leaf">{plot.benefit}</span>
             </p>
           </button>
         ))}

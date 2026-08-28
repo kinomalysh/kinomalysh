@@ -17,14 +17,13 @@ const variants: Record<Variant, string> = {
   secondary:
     'bg-white border-2 border-ink-900 text-ink-900 shadow-[3px_4px_0_rgba(35,42,69,0.35)] hover:bg-paper-shade active:translate-y-0.5 active:shadow-[2px_2px_0_rgba(35,42,69,0.35)] font-semibold',
   ghost: 'text-ink-800 hover:bg-ink-900/5 font-medium',
-  danger:
-    'bg-white text-berry border-2 border-berry/60 hover:bg-berry/5 font-semibold',
+  danger: 'bg-white text-berry border-2 border-berry/60 hover:bg-berry/5 font-semibold',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-10 px-4 text-sm rounded-xl',
+  sm: 'h-11 px-4 text-sm rounded-xl',
   md: 'h-12 px-6 text-base rounded-2xl',
-  lg: 'h-14 px-8 text-lg rounded-2xl',
+  lg: 'h-14 px-8 text-base rounded-2xl',
 }
 
 export function Button({

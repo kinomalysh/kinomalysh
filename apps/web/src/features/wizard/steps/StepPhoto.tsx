@@ -74,7 +74,7 @@ export function StepPhoto({ requireAuth, onSubmitted }: StepPhotoProps) {
             className="flex flex-col items-center gap-2 rounded-2xl border border-ink-900/15 bg-white p-3 text-center"
           >
             <tip.icon className="h-4 w-4 text-mustard-deep" />
-            <span className="text-[11px] leading-snug text-ink-800">{tip.text}</span>
+            <span className="text-xs leading-snug text-ink-800">{tip.text}</span>
           </li>
         ))}
       </ul>

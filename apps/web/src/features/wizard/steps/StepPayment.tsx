@@ -132,7 +132,7 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
                 )}
               >
                 {pack.badge && (
-                  <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-[9px] font-bold text-on-poppy">
+                  <span className="absolute -top-2.5 right-3 rounded-full border-2 border-ink-900 bg-poppy px-2 py-0.5 text-xs font-bold text-on-poppy">
                     {pack.badge}
                   </span>
                 )}
@@ -140,7 +140,7 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
                 <span className="mt-1 block font-display text-xl text-ink-900">
                   {formatRub(pack.rub)}
                 </span>
-                <span className="mt-1.5 inline-block rounded-full bg-paper-shade px-2 py-0.5 text-[11px] font-bold text-ink-800">
+                <span className="mt-1.5 inline-block rounded-full bg-paper-shade px-2 py-0.5 text-xs font-bold text-ink-800">
                   {formatTokens(pack.tokens)}
                 </span>
               </button>
@@ -157,7 +157,7 @@ export function StepPayment({ onPaid }: StepPaymentProps) {
                   onClick={() => setMethod(option.id)}
                 >
                   <span>{option.label}</span>
-                  <span className="text-[10px] font-normal opacity-70">{option.hint}</span>
+                  <span className="text-xs font-normal opacity-70">{option.hint}</span>
                 </Chip>
               ))}
             </div>
