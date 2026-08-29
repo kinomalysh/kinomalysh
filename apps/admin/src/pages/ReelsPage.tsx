@@ -281,7 +281,7 @@ export function ReelsPage() {
 
           <p className="mb-4 rounded-xl bg-surface-2 px-3 py-2 text-xs text-ink-3">
             {kind === 't2v'
-              ? 'По умолчанию используется каст сверху. Приложите свои фото, только если нужны другие лица'
+              ? 'По умолчанию используется каст сверху. Приложите свои фото, только если нужны другие лица. Ролик длится 8 секунд - это один момент, а не история из нескольких сцен'
               : 'Загрузите готовую картинку сцены - оживим её через PixVerse'}
           </p>
 
@@ -289,7 +289,14 @@ export function ReelsPage() {
             <Field label="Название (для себя)">
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Малыш поперёк кровати" />
             </Field>
-            <Field label={kind === 't2v' ? 'Описание сцены' : 'Что должно двигаться в сцене'}>
+            <Field
+              label={kind === 't2v' ? 'Описание сцены' : 'Что должно двигаться в сцене'}
+              hint={
+                kind === 't2v'
+                  ? 'Это первый кадр: кто в кадре, где, как стоит, какой свет. Один момент, без «потом», «затем» и описания камеры - иначе модель нарисует раскадровку из нескольких панелей'
+                  : undefined
+              }
+            >
               <Textarea
                 rows={3}
                 value={scenePrompt}
@@ -302,8 +309,11 @@ export function ReelsPage() {
               />
             </Field>
             {kind === 't2v' && (
-              <Field label="Движение камеры (необязательно)">
-                <Input value={motionPrompt} onChange={(e) => setMotionPrompt(e.target.value)} placeholder="slow push-in, soft parallax" />
+              <Field
+                label="Что происходит за 8 секунд (необязательно)"
+                hint="Движение героев и камеры: одно непрерывное действие, без склеек"
+              >
+                <Input value={motionPrompt} onChange={(e) => setMotionPrompt(e.target.value)} placeholder="dad scoops the toddler up, slow push-in" />
               </Field>
             )}
             <Field label={kind === 't2v' ? 'Свои фото (необязательно)' : 'Картинка сцены'}>

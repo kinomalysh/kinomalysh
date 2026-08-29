@@ -4,6 +4,7 @@ import path from 'node:path'
 import { and, asc, eq } from 'drizzle-orm'
 import { createDb, productScenes, products, stories, storyScenes } from '@kidsstory/db'
 import {
+  buildProductFramePrompt,
   buildProductScenePrompt,
   hasNamePlaceholder,
   INTRO_CLIP_KEY,
@@ -120,7 +121,7 @@ async function renderHeroClip(
     gender === 'female' && scene.promptFemale?.trim() ? scene.promptFemale : scene.prompt
   const fullPrompt = buildProductScenePrompt(promptText)
   const frame = await withRetries(`кадр ${scene.id}`, SCENE_ATTEMPTS, () =>
-    buildReelFirstFrame([photoPath], fullPrompt, 'landscape_16_9'),
+    buildReelFirstFrame([photoPath], buildProductFramePrompt(promptText), 'landscape_16_9'),
   )
   const videoUrl = await withRetries(`оживление ${scene.id}`, SCENE_ATTEMPTS, () =>
     animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {

@@ -29,8 +29,27 @@ export type ReelKind = 't2v' | 'i2v'
 export const REEL_STYLE =
   'soft stylized 3D cartoon animation, adorable characters with huge glossy expressive eyes and soft rounded features, warm cozy cinematic lighting, soft shadows, high-end render quality, shallow depth of field, vertical 9:16 composition, single continuous shot, smooth gentle camera movement, no text'
 
+export const REEL_FRAME_STYLE =
+  'soft stylized 3D cartoon animation, adorable characters with huge glossy expressive eyes and soft rounded features, warm cozy cinematic lighting, soft shadows, high-end render quality, shallow depth of field, full-bleed vertical 9:16 composition, no text'
+
 export const REEL_NEGATIVE_PROMPT =
-  'text, letters, captions, watermark, logo, extra fingers, deformed hands, three arms, creepy face, uncanny valley, photorealistic human skin, exaggerated bulging eyes, fast cuts, shaky camera, glitch, low quality'
+  'split screen, collage, grid, storyboard, comic panels, multiple frames, film strip, inset frames, borders, letterbox bars, text, letters, captions, watermark, logo, extra fingers, deformed hands, three arms, creepy face, uncanny valley, photorealistic human skin, exaggerated bulging eyes, fast cuts, shaky camera, glitch, low quality'
+
+export const FRAME_GUARD =
+  'Draw exactly ONE still frame: the very first instant of the scene below, as a single continuous image that fills the whole canvas edge to edge. Never draw a storyboard, comic strip, panels, split screen, collage, grid, film strip, insets or borders, and never show the same character twice. Ignore every camera move, cut, transition and later action mentioned in the scene - render only the opening moment, from one fixed point of view.'
+
+export function buildFramePrompt(scenePrompt: string, style: string): string {
+  const scene = scenePrompt.trim().replace(/\.$/, '')
+  return `${FRAME_GUARD}\n\nScene: ${scene}, ${style}`
+}
+
+export function buildReelFramePrompt(scenePrompt: string): string {
+  return buildFramePrompt(scenePrompt, REEL_FRAME_STYLE)
+}
+
+export function buildProductFramePrompt(scenePrompt: string): string {
+  return buildFramePrompt(scenePrompt, PRODUCT_STYLE)
+}
 
 export function buildReelPrompt(scenePrompt: string): string {
   const scene = scenePrompt.trim().replace(/\.$/, '')

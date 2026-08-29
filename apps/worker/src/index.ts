@@ -3,7 +3,9 @@ import { Redis } from 'ioredis'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import { adReels, createDb, productScenes, settings, stories, tokenLedger, users } from '@kidsstory/db'
 import {
+  buildProductFramePrompt,
   buildProductScenePrompt,
+  buildReelFramePrompt,
   getPlotDef,
   hasNamePlaceholder,
   renderVoiceoverText,
@@ -148,7 +150,10 @@ const adReelWorker = new Worker<AdReelJobData>(
       if (reel.kind === 't2v') {
         console.log(`[adreel] ${reel.id}: building first frame`)
         await setReelStatus(reel.id, { status: 'framing' })
-        sceneImageUrl = await buildReelFirstFrame(reel.inputPhotos, reel.fullPrompt)
+        sceneImageUrl = await buildReelFirstFrame(
+          reel.inputPhotos,
+          buildReelFramePrompt(reel.scenePrompt),
+        )
         await setReelStatus(reel.id, { firstFrameUrl: sceneImageUrl })
       } else {
         sceneImageUrl = await photoDataUri(reel.inputPhotos[0])
@@ -243,7 +248,11 @@ const sceneWorker = new Worker<SceneAssetJobData>(
       })
       if (!sample?.value) throw new Error('загрузите тестовое фото ребёнка в настройках')
       console.log(`[scene] ${scene.id}: building frame`)
-      const frame = await buildReelFirstFrame([sample.value], fullPrompt, 'landscape_16_9')
+      const frame = await buildReelFirstFrame(
+        [sample.value],
+        buildProductFramePrompt(scene.prompt),
+        'landscape_16_9',
+      )
       await setSceneStatus(scene.id, { clipStatus: 'animating', frameUrl: frame })
       console.log(`[scene] ${scene.id}: animating`)
       videoUrl = await animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {
