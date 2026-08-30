@@ -1,7 +1,16 @@
 import { Queue, UnrecoverableError, Worker } from 'bullmq'
 import { Redis } from 'ioredis'
 import { and, eq, ne, sql } from 'drizzle-orm'
-import { adReels, createDb, productScenes, settings, stories, tokenLedger, users } from '@kidsstory/db'
+import {
+  adReels,
+  createDb,
+  productScenes,
+  products,
+  settings,
+  stories,
+  tokenLedger,
+  users,
+} from '@kidsstory/db'
 import {
   buildProductFramePrompt,
   buildProductScenePrompt,
@@ -40,6 +49,7 @@ import {
 } from './fal.js'
 import { runHousekeeping } from './housekeeping.js'
 import { assembleProductOrder, OrderFailedError } from './productOrder.js'
+import { assembleBookOrder } from './bookOrder.js'
 import { generateVoiceover } from './elevenlabs.js'
 
 const SAMPLE_CHILD_NAME = 'Тёма'
@@ -293,7 +303,14 @@ const productOrderWorker = new Worker<ProductOrderJobData>(
   async (job) => {
     console.log(`[order] ${job.data.storyId}: сборка запущена`)
     try {
-      await assembleProductOrder(db, job.data.storyId)
+      const story = await db.query.stories.findFirst({
+        where: eq(stories.id, job.data.storyId),
+      })
+      const product = story?.productId
+        ? await db.query.products.findFirst({ where: eq(products.id, story.productId) })
+        : null
+      if (product?.kind === 'book') await assembleBookOrder(db, job.data.storyId)
+      else await assembleProductOrder(db, job.data.storyId)
     } catch (error) {
       if (error instanceof ContentPolicyError || error instanceof OrderFailedError) {
         throw new UnrecoverableError(error.message)

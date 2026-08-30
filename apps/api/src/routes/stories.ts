@@ -3,10 +3,17 @@ import { createWriteStream } from 'node:fs'
 import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { productScenes, products, stories, storyScenes } from '@kidsstory/db'
+import {
+  productPages,
+  productScenes,
+  products,
+  stories,
+  storyPages,
+  storyScenes,
+} from '@kidsstory/db'
 import {
   chooseAvatarSchema,
   CONSENT_VERSION,
@@ -333,16 +340,60 @@ async function presignAll(keys: string[]): Promise<string[]> {
   return Promise.all(keys.map((key) => presignGet(key, { expiresIn: 3600 })))
 }
 
+async function bookAssets(story: Story) {
+  if (story.status !== 'ready' || !isStorageConfigured) return null
+  const rows = await db
+    .select()
+    .from(storyPages)
+    .where(eq(storyPages.storyId, story.id))
+    .orderBy(asc(storyPages.position))
+  const productRows = story.productId
+    ? await db
+        .select()
+        .from(productPages)
+        .where(eq(productPages.productId, story.productId))
+        .orderBy(asc(productPages.position))
+    : []
+  const textByPageId = new Map(productRows.map((p) => [p.id, p.text]))
+
+  const pages = (
+    await Promise.all(
+      rows
+        .filter((r) => r.imageKey)
+        .map(async (r) => {
+          const imageUrl = await presignGet(r.imageKey as string, { expiresIn: 3600 }).catch(
+            () => null,
+          )
+          return imageUrl
+            ? { position: r.position, imageUrl, text: textByPageId.get(r.pageId) ?? '' }
+            : null
+        }),
+    )
+  ).filter((p): p is { position: number; imageUrl: string; text: string } => p !== null)
+
+  const pdfUrl = story.pdfKey
+    ? await presignGet(story.pdfKey, { expiresIn: 3600 }).catch(() => null)
+    : null
+  const audioUrl = story.audioKey
+    ? await presignGet(story.audioKey, { expiresIn: 3600 }).catch(() => null)
+    : null
+  return { pages, pdfUrl, audioUrl }
+}
+
 async function toDto(story: Story) {
   let resultUrl = story.resultUrl
   if (isStorageConfigured && story.resultKey && story.status === 'ready') {
     resultUrl = await presignGet(story.resultKey, { expiresIn: 3600 }).catch(() => story.resultUrl)
   }
-  let product: { slug: string; title: string } | null = null
+  let product: { slug: string; title: string; kind: string } | null = null
   if (story.productId) {
     const row = await db.query.products.findFirst({ where: eq(products.id, story.productId) })
-    product = row ? { slug: row.slug, title: row.title } : null
+    product = row ? { slug: row.slug, title: row.title, kind: row.kind } : null
   }
+
+  // Книгу читают прямо на сайте, поэтому кроме файла отдаём страницы с текстом -
+  // читалке нужны картинки по порядку.
+  const book = product?.kind === 'book' ? await bookAssets(story) : null
   return {
     id: story.id,
     status: story.status,
@@ -361,6 +412,7 @@ async function toDto(story: Story) {
     castingAttemptsLeft: Math.max(0, MAX_CASTING_ATTEMPTS + 1 - story.castingAttempts),
     scenes: story.scenes,
     resultUrl,
+    book,
     progress: await buildProgress(story),
     expiresAt: story.expiresAt?.toISOString() ?? null,
     daysLeft: story.expiresAt ? daysLeft(story.expiresAt, new Date()) : null,

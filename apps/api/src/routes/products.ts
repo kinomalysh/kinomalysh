@@ -5,7 +5,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
-import { productScenes, products, settings } from '@kidsstory/db'
+import { productPages, productScenes, products, settings } from '@kidsstory/db'
 import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
 import { hasNamePlaceholder, NAME_PLACEHOLDER_HINT } from '@kidsstory/shared'
 import { z } from 'zod'
@@ -426,6 +426,48 @@ function registerSamplePhotoRoutes(
   })
 }
 
+// В карточке книги человек должен увидеть, из чего она состоит: сколько страниц
+// и как они выглядят. Отдаём утверждённые образцы страниц, а не одну обложку.
+async function bookCatalogDto(product: typeof products.$inferSelect) {
+  const pages = await db
+    .select()
+    .from(productPages)
+    .where(eq(productPages.productId, product.id))
+    .orderBy(asc(productPages.position))
+  const approved = pages.filter((p) => p.approvedSampleKey)
+  const samplePages = isStorageConfigured
+    ? (
+        await Promise.all(
+          approved.slice(0, 4).map(async (p) => {
+            const url = await presignGet(p.approvedSampleKey as string, { expiresIn: 3600 }).catch(
+              () => null,
+            )
+            return url ? { position: p.position, text: p.text, imageUrl: url } : null
+          }),
+        )
+      ).filter((p): p is { position: number; text: string; imageUrl: string } => p !== null)
+    : []
+  let previewUrl: string | null = null
+  const previewSource = product.previewKey ?? approved[0]?.approvedSampleKey ?? null
+  if (isStorageConfigured && previewSource) {
+    previewUrl = await presignGet(previewSource, { expiresIn: 3600 }).catch(() => null)
+  }
+  return {
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    tagline: product.tagline,
+    description: product.description,
+    kind: product.kind,
+    about: product.about,
+    audience: product.audience,
+    priceTokens: product.priceTokens,
+    sceneCount: pages.length,
+    previewUrl,
+    samplePages,
+  }
+}
+
 export async function publicCatalogRoutes(app: FastifyInstance) {
   app.get('/catalog', async () => {
     const rows = await db
@@ -447,6 +489,7 @@ export async function publicCatalogRoutes(app: FastifyInstance) {
 }
 
 async function catalogDto(product: typeof products.$inferSelect) {
+  if (product.kind === 'book') return bookCatalogDto(product)
   const scenes = await db
     .select()
     .from(productScenes)
@@ -464,8 +507,12 @@ async function catalogDto(product: typeof products.$inferSelect) {
     title: product.title,
     tagline: product.tagline,
     description: product.description,
+    kind: product.kind,
+    about: product.about,
+    audience: product.audience,
     priceTokens: product.priceTokens,
     sceneCount: scenes.length,
     previewUrl,
+    samplePages: [],
   }
 }

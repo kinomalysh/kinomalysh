@@ -39,6 +39,8 @@ export const stories = pgTable('stories', {
   scenes: jsonb('scenes').$type<string[]>().notNull().default([]),
   resultUrl: text('result_url'),
   resultKey: text('result_key'),
+  pdfKey: text('pdf_key'),
+  audioKey: text('audio_key'),
   productId: uuid('product_id'),
   failReason: text('fail_reason'),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
@@ -133,6 +135,9 @@ export const products = pgTable('products', {
   title: varchar('title', { length: 120 }).notNull(),
   tagline: varchar('tagline', { length: 200 }),
   description: text('description'),
+  kind: varchar('kind', { length: 8 }).notNull().default('video'),
+  about: text('about'),
+  audience: varchar('audience', { length: 120 }),
   priceTokens: integer('price_tokens').notNull().default(0),
   previewKey: text('preview_key'),
   status: varchar('status', { length: 16 }).notNull().default('draft'),
@@ -163,6 +168,42 @@ export const productScenes = pgTable('product_scenes', {
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   approvedClipKey: text('approved_clip_key'),
   approvedVoKey: text('approved_vo_key'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const productPages = pgTable('product_pages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  text: text('text').notNull().default(''),
+  textFemale: text('text_female'),
+  prompt: text('prompt').notNull().default(''),
+  promptFemale: text('prompt_female'),
+  sampleKey: text('sample_key'),
+  sampleStatus: varchar('sample_status', { length: 12 }).notNull().default('idle'),
+  failReason: text('fail_reason'),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  approvedSampleKey: text('approved_sample_key'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const storyPages = pgTable('story_pages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  storyId: uuid('story_id')
+    .notNull()
+    .references(() => stories.id, { onDelete: 'cascade' }),
+  pageId: uuid('page_id')
+    .notNull()
+    .references(() => productPages.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  imageKey: text('image_key'),
+  status: varchar('status', { length: 12 }).notNull().default('pending'),
+  attempts: integer('attempts').notNull().default(0),
+  failReason: text('fail_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
