@@ -1,0 +1,13 @@
+[Unit]
+Description=Kinomalysh deploy agent
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/kinomalysh/app
+ExecStart=/srv/kinomalysh/app/infra/deploy-agent.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=1800
