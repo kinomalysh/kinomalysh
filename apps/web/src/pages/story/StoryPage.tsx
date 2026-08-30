@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
+import { BookResult } from '@/widgets/book-reader/BookResult'
 import { Card } from '@/shared/ui/Card'
 import { Progress } from '@/shared/ui/Progress'
 import { ROUTES } from '@/shared/config/routes'
@@ -118,7 +119,15 @@ export function StoryPage() {
             )}
           </header>
 
-          {order.status === 'ready' && order.resultUrl && (
+          {order.status === 'ready' && order.book && (
+            <BookResult
+              title={order.product?.title ?? 'Книга'}
+              book={order.book}
+              daysLeft={order.daysLeft}
+            />
+          )}
+
+          {order.status === 'ready' && !order.book && order.resultUrl && (
             <div className="space-y-4">
               <video
                 src={order.resultUrl}

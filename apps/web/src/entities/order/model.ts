@@ -27,17 +27,30 @@ export interface OrderProgress {
   percent: number
 }
 
+export interface OrderBookPage {
+  position: number
+  imageUrl: string
+  text: string
+}
+
+export interface OrderBook {
+  pages: OrderBookPage[]
+  pdfUrl: string | null
+  audioUrl: string | null
+}
+
 export interface Order {
   id: string
   status: OrderStatus
   castingUrls: string[]
   castingAttemptsLeft: number
   productId: string | null
-  product: { slug: string; title: string } | null
+  product: { slug: string; title: string; kind: string } | null
   childName: string | null
   gender: string | null
   tokensCost: number | null
   resultUrl: string | null
+  book: OrderBook | null
   progress: OrderProgress | null
   expiresAt: string | null
   daysLeft: number | null

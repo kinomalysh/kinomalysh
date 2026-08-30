@@ -44,6 +44,16 @@ const patchSceneSchema = z.object({
   voiceoverTextFemale: z.string().max(4000).nullable().optional(),
   motionPrompt: z.string().max(2000).nullable().optional(),
 })
+const addPageSchema = z.object({
+  text: z.string().max(1200).optional(),
+  prompt: z.string().max(4000).optional(),
+})
+const patchPageSchema = z.object({
+  text: z.string().max(1200).optional(),
+  textFemale: z.string().max(1200).nullable().optional(),
+  prompt: z.string().max(4000).optional(),
+  promptFemale: z.string().max(4000).nullable().optional(),
+})
 const reorderSchema = z.object({ orderedIds: z.array(z.string().uuid()).min(1).max(60) })
 const generateSchema = z.object({ target: z.enum(['clip', 'vo']) })
 const approveSchema = z.object({ approved: z.boolean() })
@@ -389,6 +399,73 @@ export async function productRoutes(app: FastifyInstance) {
     return { scene: await sceneDto(updated) }
   })
 
+  app.get('/admin/products/:id/pages', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const product = await db.query.products.findFirst({ where: eq(products.id, id) })
+    if (!product) return reply.code(404).send({ error: 'Продукт не найден' })
+    const rows = await db
+      .select()
+      .from(productPages)
+      .where(eq(productPages.productId, id))
+      .orderBy(asc(productPages.position))
+    return { pages: await Promise.all(rows.map(pageDto)) }
+  })
+
+  app.post('/admin/products/:id/pages', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const body = addPageSchema.parse(req.body ?? {})
+    const product = await db.query.products.findFirst({ where: eq(products.id, id) })
+    if (!product) return reply.code(404).send({ error: 'Продукт не найден' })
+    const [{ max }] = await db
+      .select({ max: sql<number>`coalesce(max(${productPages.position}), 0)` })
+      .from(productPages)
+      .where(eq(productPages.productId, id))
+    const [page] = await db
+      .insert(productPages)
+      .values({
+        productId: id,
+        position: Number(max) + 1,
+        text: body.text ?? '',
+        prompt: body.prompt ?? '',
+      })
+      .returning()
+    return reply.code(201).send({ page: await pageDto(page) })
+  })
+
+  app.patch('/admin/pages/:id', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const body = patchPageSchema.parse(req.body)
+    const [page] = await db
+      .update(productPages)
+      .set({ ...body, updatedAt: new Date() })
+      .where(eq(productPages.id, id))
+      .returning()
+    if (!page) return reply.code(404).send({ error: 'Страница не найдена' })
+    return { page: await pageDto(page) }
+  })
+
+  app.delete('/admin/pages/:id', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const [page] = await db.delete(productPages).where(eq(productPages.id, id)).returning()
+    if (!page) return reply.code(404).send({ error: 'Страница не найдена' })
+    return { ok: true }
+  })
+
+  // Утверждение фиксирует именно ту картинку, которую человек видел: в карточке
+  // товара показываем только утверждённые образцы, случайная генерация туда не попадёт.
+  app.post('/admin/pages/:id/approve', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const page = await db.query.productPages.findFirst({ where: eq(productPages.id, id) })
+    if (!page) return reply.code(404).send({ error: 'Страница не найдена' })
+    if (!page.sampleKey) return reply.code(400).send({ error: 'Нечего утверждать - образца нет' })
+    const [updated] = await db
+      .update(productPages)
+      .set({ approvedSampleKey: page.sampleKey, approvedAt: new Date(), updatedAt: new Date() })
+      .where(eq(productPages.id, id))
+      .returning()
+    return { page: await pageDto(updated) }
+  })
+
   app.get('/admin/placeholders', async () => ({ hint: NAME_PLACEHOLDER_HINT }))
 
   registerSamplePhotoRoutes(app, 'sample-child', SAMPLE_CHILD_KEY, 'child')
@@ -465,6 +542,24 @@ async function bookCatalogDto(product: typeof products.$inferSelect) {
     sceneCount: pages.length,
     previewUrl,
     samplePages,
+  }
+}
+
+async function pageDto(page: typeof productPages.$inferSelect) {
+  const sign = async (key: string | null) =>
+    key && isStorageConfigured ? await presignGet(key, { expiresIn: 3600 }).catch(() => null) : null
+  return {
+    id: page.id,
+    position: page.position,
+    text: page.text,
+    textFemale: page.textFemale,
+    prompt: page.prompt,
+    promptFemale: page.promptFemale,
+    sampleUrl: await sign(page.sampleKey),
+    sampleStatus: page.sampleStatus,
+    approvedUrl: await sign(page.approvedSampleKey),
+    approvedAt: page.approvedAt?.toISOString() ?? null,
+    failReason: page.failReason,
   }
 }
 

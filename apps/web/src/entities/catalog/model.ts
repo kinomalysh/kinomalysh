@@ -1,5 +1,11 @@
 import { api } from '@/shared/api/client'
 
+export interface SamplePage {
+  position: number
+  text: string
+  imageUrl: string
+}
+
 export interface CatalogProduct {
   id: string
   slug: string
@@ -9,6 +15,10 @@ export interface CatalogProduct {
   priceTokens: number
   sceneCount: number
   previewUrl: string | null
+  kind: 'video' | 'book'
+  about: string | null
+  audience: string | null
+  samplePages: SamplePage[]
 }
 
 export async function fetchCatalog(): Promise<CatalogProduct[]> {
