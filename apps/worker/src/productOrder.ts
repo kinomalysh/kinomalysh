@@ -14,7 +14,14 @@ import {
 } from '@kidsstory/shared'
 import type { ChildGender } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
-import { animateScene, buildReelFirstFrame, ContentPolicyError, downloadBytes } from './fal.js'
+import {
+  animateScene,
+  buildFrameFromRefs,
+  bytesToDataUri,
+  ContentPolicyError,
+  downloadBytes,
+  photoDataUri,
+} from './fal.js'
 import { generateVoiceover } from './elevenlabs.js'
 import { buildSegment, concatSegments, normalizeIntro } from './ffmpeg.js'
 
@@ -97,12 +104,32 @@ async function renderPersonalVo(
   return key
 }
 
+// Личность героя закрепляется утверждённым на кастинге портретом: человек одобрил
+// именно это лицо, и все кадры должны идти от него, иначе ребёнок плывёт от сцены
+// к сцене. Исходное фото остаётся вторым референсом, а если кастинг не сохранился -
+// единственным.
+async function heroReferences(
+  chosenCastingKey: string | null,
+  photoPath: string,
+): Promise<string[]> {
+  const refs: string[] = []
+  if (chosenCastingKey) {
+    try {
+      refs.push(bytesToDataUri(await getObject(chosenCastingKey)))
+    } catch (error) {
+      console.warn(`[order] не удалось взять утверждённый портрет: ${String(error)}`)
+    }
+  }
+  refs.push(await photoDataUri(photoPath))
+  return refs
+}
+
 async function renderHeroClip(
   db: Db,
   scene: Scene,
   storyId: string,
-  photoPath: string,
   gender: ChildGender,
+  heroRefs: string[],
 ): Promise<string> {
   const rowFilter = and(eq(storyScenes.storyId, storyId), eq(storyScenes.sceneId, scene.id))
   const existing = await db.query.storyScenes.findFirst({ where: rowFilter })
@@ -121,7 +148,7 @@ async function renderHeroClip(
     gender === 'female' && scene.promptFemale?.trim() ? scene.promptFemale : scene.prompt
   const fullPrompt = buildProductScenePrompt(promptText)
   const frame = await withRetries(`кадр ${scene.id}`, SCENE_ATTEMPTS, () =>
-    buildReelFirstFrame([photoPath], buildProductFramePrompt(promptText), 'landscape_16_9'),
+    buildFrameFromRefs(heroRefs, buildProductFramePrompt(promptText), 'landscape_16_9'),
   )
   const videoUrl = await withRetries(`оживление ${scene.id}`, SCENE_ATTEMPTS, () =>
     animateScene(frame, scene.motionPrompt?.trim() || fullPrompt, {
@@ -169,6 +196,11 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
       .onConflictDoNothing()
   }
 
+  const heroRefs = await heroReferences(story.chosenCastingKey, story.photoPath)
+  console.log(
+    `[order] ${storyId}: героя ведём по ${story.chosenCastingKey ? 'утверждённому портрету' : 'исходному фото'}`,
+  )
+
   const workDir = await mkdtemp(path.join(tmpdir(), `order-${storyId}-`))
   try {
     const introRawPath = path.join(workDir, 'intro-raw.mp4')
@@ -180,7 +212,7 @@ export async function assembleProductOrder(db: Db, storyId: string): Promise<voi
       console.log(`[order] ${storyId}: сцена ${scene.position}/${scenes.length} (${scene.kind})`)
       const clipKey =
         scene.kind === 'hero'
-          ? await renderHeroClip(db, scene, storyId, story.photoPath, gender)
+          ? await renderHeroClip(db, scene, storyId, gender, heroRefs)
           : approvedClip(scene)
       const voKey = hasNamePlaceholder(scene.voiceoverText)
         ? await renderPersonalVo(db, scene, storyId, childName, gender)

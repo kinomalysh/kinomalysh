@@ -80,17 +80,33 @@ interface FalEditResponse {
   images?: Array<{ url?: string }>
 }
 
-const ASPECT_RATIO: Record<'portrait_16_9' | 'landscape_16_9', string> = {
+export type FrameSize = 'portrait_16_9' | 'landscape_16_9' | 'square'
+
+const ASPECT_RATIO: Record<FrameSize, string> = {
   portrait_16_9: '9:16',
   landscape_16_9: '16:9',
+  square: '1:1',
+}
+
+export function bytesToDataUri(bytes: Uint8Array, mime = 'image/png'): string {
+  return `data:${mime};base64,${Buffer.from(bytes).toString('base64')}`
 }
 
 export async function buildReelFirstFrame(
   photoPaths: string[],
   fullPrompt: string,
-  imageSize: 'portrait_16_9' | 'landscape_16_9' = 'portrait_16_9',
+  imageSize: FrameSize = 'portrait_16_9',
 ): Promise<string> {
   const imageUris = await Promise.all(photoPaths.map(photoToDataUri))
+  return buildFrameFromRefs(imageUris, fullPrompt, imageSize)
+}
+
+export async function buildFrameFromRefs(
+  imageUris: string[],
+  fullPrompt: string,
+  imageSize: FrameSize = 'portrait_16_9',
+): Promise<string> {
+  if (imageUris.length === 0) throw new FalError('нет референсов для кадра', 400)
   const res = await fetchResilient(`https://fal.run/${IMAGE_EDIT_MODEL}`, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
