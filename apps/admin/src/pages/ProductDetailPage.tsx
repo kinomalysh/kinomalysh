@@ -4,6 +4,7 @@ import { api } from '@/shared/api'
 import { LazyVideo } from '@/shared/LazyVideo'
 import { SamplePhoto } from '@/shared/SamplePhoto'
 import { useAsync } from '@/shared/useAsync'
+import { BookPages } from './BookPages'
 import { Button, Card, cn, ErrorText, Field, Input, Spinner, Textarea } from '@/shared/ui'
 
 type SceneKind = 'hero' | 'library' | 'title'
@@ -41,6 +42,7 @@ interface Product {
   description: string | null
   priceTokens: number
   status: string
+  kind: 'video' | 'book'
 }
 
 interface Readiness {
@@ -633,6 +635,8 @@ export function ProductDetailPage() {
       </div>
 
       <ProductSettings product={data.product} onChanged={reload} />
+
+      {data.product.kind === 'book' && <BookPages productId={data.product.id} />}
 
       <SamplePhoto
         slug="sample-child"

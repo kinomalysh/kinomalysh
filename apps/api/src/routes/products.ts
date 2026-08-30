@@ -9,7 +9,7 @@ import { productPages, productScenes, products, settings } from '@kidsstory/db'
 import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
 import { hasNamePlaceholder, NAME_PLACEHOLDER_HINT } from '@kidsstory/shared'
 import { z } from 'zod'
-import { db, sceneQueue } from '../context.js'
+import { bookPageQueue, db, sceneQueue } from '../context.js'
 import { env } from '../env.js'
 
 const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -448,6 +448,19 @@ export async function productRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string }
     const [page] = await db.delete(productPages).where(eq(productPages.id, id)).returning()
     if (!page) return reply.code(404).send({ error: 'Страница не найдена' })
+    return { ok: true }
+  })
+
+  app.post('/admin/pages/:id/generate', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const page = await db.query.productPages.findFirst({ where: eq(productPages.id, id) })
+    if (!page) return reply.code(404).send({ error: 'Страница не найдена' })
+    if (!page.prompt.trim()) return reply.code(400).send({ error: 'Сначала задайте промпт' })
+    await db
+      .update(productPages)
+      .set({ sampleStatus: 'queued', failReason: null, updatedAt: new Date() })
+      .where(eq(productPages.id, id))
+    await bookPageQueue.add('book-page', { pageId: id }, { attempts: 2 })
     return { ok: true }
   })
 

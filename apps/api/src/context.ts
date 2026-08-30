@@ -6,6 +6,7 @@ import {
   QUEUE_CASTING,
   QUEUE_PRODUCT_ORDER,
   QUEUE_RENDER,
+  QUEUE_BOOK_PAGE,
   QUEUE_SCENE,
 } from '@kidsstory/shared'
 import type {
@@ -13,6 +14,7 @@ import type {
   CastingJobData,
   ProductOrderJobData,
   RenderJobData,
+  BookPageJobData,
   SceneAssetJobData,
 } from '@kidsstory/shared'
 import { env } from './env.js'
@@ -36,6 +38,7 @@ export const castingQueue = new Queue<CastingJobData>(QUEUE_CASTING, { connectio
 export const renderQueue = new Queue<RenderJobData>(QUEUE_RENDER, { connection: redis })
 export const adReelQueue = new Queue<AdReelJobData>(QUEUE_ADREEL, { connection: redis })
 export const sceneQueue = new Queue<SceneAssetJobData>(QUEUE_SCENE, { connection: redis })
+export const bookPageQueue = new Queue<BookPageJobData>(QUEUE_BOOK_PAGE, { connection: redis })
 export const productOrderQueue = new Queue<ProductOrderJobData>(QUEUE_PRODUCT_ORDER, {
   connection: redis,
 })

@@ -3,6 +3,7 @@ export const QUEUE_RENDER = 'render'
 export const QUEUE_ADREEL = 'adreel'
 export const QUEUE_SCENE = 'scene-asset'
 export const QUEUE_PRODUCT_ORDER = 'product-order'
+export const QUEUE_BOOK_PAGE = 'book-page'
 export const QUEUE_HOUSEKEEPING = 'housekeeping'
 
 export interface CastingJobData {
@@ -20,6 +21,10 @@ export interface AdReelJobData {
 export interface SceneAssetJobData {
   sceneId: string
   target: 'clip' | 'vo'
+}
+
+export interface BookPageJobData {
+  pageId: string
 }
 
 export interface ProductOrderJobData {

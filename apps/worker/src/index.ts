@@ -4,6 +4,7 @@ import { and, eq, ne, sql } from 'drizzle-orm'
 import {
   adReels,
   createDb,
+  productPages,
   productScenes,
   products,
   settings,
@@ -23,12 +24,14 @@ import {
   QUEUE_CASTING,
   QUEUE_HOUSEKEEPING,
   QUEUE_RENDER,
+  QUEUE_BOOK_PAGE,
   QUEUE_PRODUCT_ORDER,
   QUEUE_SCENE,
   REEL_NEGATIVE_PROMPT,
 } from '@kidsstory/shared'
 import type {
   AdReelJobData,
+  BookPageJobData,
   CastingJobData,
   HousekeepingJobData,
   ProductOrderJobData,
@@ -50,6 +53,7 @@ import {
 import { runHousekeeping } from './housekeeping.js'
 import { assembleProductOrder, OrderFailedError } from './productOrder.js'
 import { assembleBookOrder } from './bookOrder.js'
+import { buildBookPagePrompt, zoneForPage } from '@kidsstory/book'
 import { generateVoiceover } from './elevenlabs.js'
 
 const SAMPLE_CHILD_NAME = 'Тёма'
@@ -295,6 +299,54 @@ sceneWorker.on('failed', async (job, error) => {
       .update(productScenes)
       .set({ ...field, failReason: error.message, updatedAt: new Date() })
       .where(eq(productScenes.id, job.data.sceneId))
+  }
+})
+
+// Образец страницы рисуем на тестовом фото ребёнка - тем же промптом и тем же
+// форматом, что пойдут в реальный заказ, иначе утверждать нечего.
+const bookPageWorker = new Worker<BookPageJobData>(
+  QUEUE_BOOK_PAGE,
+  async (job) => {
+    const page = await db.query.productPages.findFirst({
+      where: eq(productPages.id, job.data.pageId),
+    })
+    if (!page) throw new Error(`страница ${job.data.pageId} не найдена`)
+    if (!page.prompt.trim()) throw new UnrecoverableError('у страницы нет промпта')
+
+    const sample = await db.query.settings.findFirst({
+      where: eq(settings.key, 'sample_child_photo'),
+    })
+    if (!sample?.value) throw new UnrecoverableError('загрузите тестовое фото ребёнка в настройках')
+
+    await db
+      .update(productPages)
+      .set({ sampleStatus: 'rendering', updatedAt: new Date() })
+      .where(eq(productPages.id, page.id))
+
+    const prompt = buildBookPagePrompt(page.prompt, zoneForPage(page.position - 1))
+    const url = await buildReelFirstFrame([sample.value], prompt, 'square')
+
+    let key: string | null = null
+    if (isStorageConfigured) {
+      key = `products/${page.productId}/page-${page.id}.png`
+      await uploadObject(key, await downloadBytes(url), 'image/png')
+    }
+    await db
+      .update(productPages)
+      .set({ sampleStatus: 'ready', sampleKey: key, failReason: null, updatedAt: new Date() })
+      .where(eq(productPages.id, page.id))
+    console.log(`[book-page] ${page.id}: образец готов`)
+  },
+  { connection, concurrency: 3 },
+)
+
+bookPageWorker.on('failed', async (job, error) => {
+  console.error(`[book-page] failed: ${error.message}`)
+  if (job?.data.pageId) {
+    await db
+      .update(productPages)
+      .set({ sampleStatus: 'failed', failReason: error.message, updatedAt: new Date() })
+      .where(eq(productPages.id, job.data.pageId))
   }
 })
 
