@@ -36,7 +36,6 @@ export interface OrderBookPage {
 export interface OrderBook {
   pages: OrderBookPage[]
   pdfUrl: string | null
-  audioUrl: string | null
 }
 
 export interface Order {

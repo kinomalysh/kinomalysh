@@ -24,7 +24,7 @@ export function Hero() {
             className="mt-4 max-w-md text-base leading-relaxed text-ink-800 animate-settle lg:mt-6 lg:max-w-lg lg:text-lg"
             style={{ animationDelay: '200ms' }}
           >
-            Одно фото - и через 15 минут готов мультфильм или книга с озвучкой, где главную роль
+            Одно фото - и через 15 минут готов мультфильм или иллюстрированная книга, где главную роль
             играет ваш ребёнок
           </p>
           <div className="mt-6 animate-pop lg:mt-9" style={{ animationDelay: '380ms' }}>

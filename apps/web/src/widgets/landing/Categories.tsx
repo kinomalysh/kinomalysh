@@ -7,7 +7,7 @@ const CATEGORIES = [
     to: ROUTES.books,
     icon: BookOpen,
     kicker: 'Книга',
-    title: 'Сказка в PDF с озвучкой',
+    title: 'Иллюстрированная сказка в PDF',
     price: '250 ₽',
     lines: [
       'Восемь страниц: иллюстрация во весь лист, текст сверху',

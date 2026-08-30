@@ -374,10 +374,7 @@ async function bookAssets(story: Story) {
   const pdfUrl = story.pdfKey
     ? await presignGet(story.pdfKey, { expiresIn: 3600 }).catch(() => null)
     : null
-  const audioUrl = story.audioKey
-    ? await presignGet(story.audioKey, { expiresIn: 3600 }).catch(() => null)
-    : null
-  return { pages, pdfUrl, audioUrl }
+  return { pages, pdfUrl }
 }
 
 async function toDto(story: Story) {

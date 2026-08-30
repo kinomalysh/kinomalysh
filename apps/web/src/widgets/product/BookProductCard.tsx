@@ -1,4 +1,4 @@
-import { BookOpen, Check, FilePdf, SpeakerHigh, Sparkle } from '@phosphor-icons/react'
+import { BookOpen, Check, FilePdf, Heart, Sparkle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { plural } from '@/shared/lib/format'
@@ -23,9 +23,9 @@ const INCLUDED = [
     text: 'Квадратные страницы: иллюстрация во весь лист, текст сказки сверху. Открывается на телефоне, планшете и компьютере.',
   },
   {
-    icon: SpeakerHigh,
-    title: 'Озвучка целиком',
-    text: 'Отдельный аудиофайл со сказкой, прочитанной вслух. Можно слушать в дороге и перед сном.',
+    icon: Heart,
+    title: 'Одна книга - одно чувство',
+    text: 'Сюжет собран вокруг настоящей детской трудности и проживает её до конца, без нравоучений в финале.',
   },
   {
     icon: BookOpen,
@@ -59,7 +59,7 @@ export function BookProductCard({ product, onOrder, className }: BookProductCard
           <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
             <Stat label="Страниц" value={String(pages)} />
             <Stat label="Готово за" value="5 минут" />
-            <Stat label="Формат" value="PDF + MP3" />
+            <Stat label="Формат" value="PDF" />
           </dl>
 
           <div className="mt-7 flex flex-wrap items-center gap-4">

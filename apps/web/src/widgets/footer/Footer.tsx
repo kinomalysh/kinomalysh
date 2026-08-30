@@ -21,8 +21,8 @@ export function Footer() {
         <div>
           <img src={asset('logo-wordmark.png')} alt={BRAND} className="h-11 w-auto" />
           <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-ink-800">
-            Персональные сказки, где главную роль играет ваш ребёнок. Мультфильмы и книги с
-            озвучкой - за 15 минут
+            Персональные сказки, где главную роль играет ваш ребёнок. Мультфильмы с озвучкой и
+            иллюстрированные книги - за 15 минут
           </p>
         </div>
 

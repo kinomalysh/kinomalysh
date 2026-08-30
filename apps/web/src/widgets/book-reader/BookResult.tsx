@@ -1,4 +1,4 @@
-import { DownloadSimple, SpeakerHigh } from '@phosphor-icons/react'
+import { DownloadSimple } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { plural } from '@/shared/lib/format'
 import type { OrderBook } from '@/entities/order/model'
@@ -20,21 +20,6 @@ export function BookResult({ title, book, daysLeft }: BookResultProps) {
         />
       )}
 
-      {book.audioUrl && (
-        <div className="rounded-3xl border-2 border-ink-900/12 bg-white/70 p-4 backdrop-blur-sm">
-          <p className="flex items-center gap-2 text-sm font-semibold text-ink-900">
-            <SpeakerHigh className="h-4 w-4 text-poppy" weight="duotone" aria-hidden />
-            Сказка вслух
-          </p>
-          <audio
-            src={book.audioUrl}
-            controls
-            preload="metadata"
-            className="mt-3 w-full"
-            aria-label={`Озвучка книги «${title}»`}
-          />
-        </div>
-      )}
 
       {book.pdfUrl && (
         <Button size="lg" className="w-full" onClick={() => window.open(book.pdfUrl as string)}>

@@ -8,7 +8,7 @@ export interface Pack {
 }
 
 export const PACKS: Pack[] = [
-  { id: 'pack-book', rub: 250, tokens: 25, label: 'Книга с озвучкой' },
+  { id: 'pack-book', rub: 250, tokens: 25, label: 'Книга-сказка' },
   { id: 'pack-video', rub: 1990, tokens: 199, label: 'Один мультфильм' },
   { id: 'pack-hero', rub: 3490, tokens: 349, label: 'Супергеройский мультфильм', badge: 'Новинка' },
   { id: 'pack-family', rub: 5990, tokens: 799, label: 'Семейный 3+1', badge: '+1 сказка в подарок', popular: true },

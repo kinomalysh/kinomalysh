@@ -24,8 +24,10 @@ export function StepHero() {
       <header className="space-y-2">
         <h1 className="font-display text-2xl text-ink-900">Кто наш герой?</h1>
         <p className="text-sm text-ink-800">
-          Имя прозвучит в озвучке живым голосом и просклоняется по падежам, а пол меняет и текст, и
-          картинку {product ? `мультфильма «${product.title}»` : ''}
+          {product?.kind === 'book'
+            ? 'Имя войдёт в текст сказки и просклоняется по падежам, а пол меняет и текст, и картинку'
+            : 'Имя прозвучит в озвучке живым голосом и просклоняется по падежам, а пол меняет и текст, и картинку'}
+          {product ? ` «${product.title}»` : ''}
         </p>
       </header>
 

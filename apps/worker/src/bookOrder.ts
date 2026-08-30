@@ -10,7 +10,6 @@ import {
 } from '@kidsstory/shared'
 import { getObject, isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { buildFrameFromRefs, bytesToDataUri, downloadBytes, photoDataUri } from './fal.js'
-import { generateVoiceover } from './elevenlabs.js'
 import { OrderFailedError } from './productOrder.js'
 
 type Db = ReturnType<typeof createDb>
@@ -145,17 +144,11 @@ export async function assembleBookOrder(db: Db, storyId: string): Promise<void> 
   const pdfKey = `orders/${storyId}/book.pdf`
   await uploadObject(pdfKey, pdf, 'application/pdf')
 
-  console.log(`[book] ${storyId}: озвучка`)
-  const narration = bookPages.map((p) => p.text).join('\n\n')
-  const audioKey = `orders/${storyId}/book.mp3`
-  await uploadObject(audioKey, await generateVoiceover(narration), 'audio/mpeg')
-
   await db
     .update(stories)
     .set({
       status: 'ready',
       pdfKey,
-      audioKey,
       resultKey: pdfKey,
       expiresAt: resultExpiryFrom(new Date()),
       failReason: null,
