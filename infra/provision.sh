@@ -81,7 +81,15 @@ X11Forwarding no
 MaxAuthTries 5
 ClientAliveInterval 300
 ClientAliveCountMax 2
+MaxStartups 100:30:200
+LoginGraceTime 30
 EOF
+# PerSourcePenalties (OpenSSH 9.8+) штрафует исходящий IP за соединения,
+# закрытые без аутентификации, и рубит их сразу после accept. При закрытых
+# паролях и root это не даёт безопасности, зато ломает наши же выкатки.
+if sshd -T 2>/dev/null | grep -qi '^persourcepenalties'; then
+  echo "PerSourcePenalties no" >> /etc/ssh/sshd_config.d/99-hardening.conf
+fi
 sshd -t
 systemctl reload ssh 2>/dev/null || systemctl reload sshd
 ok "root закрыт, пароли отключены"

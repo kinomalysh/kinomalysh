@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${HOST:-kinomalysh}"
+REPO_ROOT_SSH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT_SSH/infra/ssh-session.sh"
+ssh_session_open || { echo "нет SSH"; exit 1; }
 WEB_ROOT="${WEB_ROOT:-/srv/kinomalysh/web}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -18,15 +20,15 @@ npm run build -w apps/web
 ok "$(find apps/web/dist -name '*.html' | wc -l | tr -d ' ') HTML, $(du -sh apps/web/dist | cut -f1)"
 
 step "Конфиг Caddy"
-scp -q infra/Caddyfile "$HOST:/tmp/Caddyfile"
-ssh "$HOST" "sudo install -m 644 /tmp/Caddyfile /etc/caddy/Caddyfile && sudo caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1" \
+pscp -q infra/Caddyfile "$KM_HOST:/tmp/Caddyfile"
+pssh "sudo install -m 644 /tmp/Caddyfile /etc/caddy/Caddyfile && sudo caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1" \
   || die "конфиг не прошёл валидацию, ничего не менял"
 ok "валиден"
 
 step "Выкладка"
-ssh "$HOST" "sudo install -d -o deploy -g deploy -m 755 $WEB_ROOT"
-rsync -az --delete -e ssh apps/web/dist/ "$HOST:$WEB_ROOT/"
-ssh "$HOST" "sudo chown -R caddy:caddy /var/log/caddy && sudo systemctl reload caddy"
+pssh "sudo install -d -o deploy -g deploy -m 755 $WEB_ROOT"
+rsync -az --delete -e "ssh ${SSH_OPTS[*]}" apps/web/dist/ "$KM_HOST:$WEB_ROOT/"
+pssh "sudo chown -R caddy:caddy /var/log/caddy && sudo systemctl reload caddy"
 ok "выложено, Caddy перезагружен"
 
 step "Проверка"

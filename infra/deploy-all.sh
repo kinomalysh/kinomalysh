@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${HOST:-kinomalysh}"
 APP_DIR="${APP_DIR:-/srv/kinomalysh/app}"
 BRANCH="${BRANCH:-main}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/infra/ssh-session.sh"
+trap ssh_session_close EXIT
 
 step() { printf '\n\033[1;34m▸ %s\033[0m\n' "$1"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
@@ -18,12 +19,11 @@ npm test >/dev/null || die "тесты красные"
 ok "дерево чистое, тесты зелёные"
 
 step "Связь с сервером"
-ssh -o ConnectTimeout=10 -o BatchMode=yes "$HOST" 'echo ok' >/dev/null \
-  || die "нет SSH до $HOST (проверьте VPN и fail2ban)"
-ok "$HOST отвечает"
+ssh_session_open || die "нет SSH до $KM_HOST"
+ok "$KM_HOST отвечает, канал держим до конца выкатки"
 
 step "Код и сборка бэкенда"
-ssh "$HOST" "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BRANCH && \
+pssh "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BRANCH && \
   git reset --quiet --hard origin/$BRANCH && \
   npm install --silent && \
   npm run build -w packages/shared -w packages/db -w packages/storage -w apps/api -w apps/worker" \
@@ -31,22 +31,22 @@ ssh "$HOST" "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BR
 ok "собрано из $BRANCH"
 
 step "Миграции"
-ssh "$HOST" "sudo bash -c 'set -a; . /etc/kinomalysh/db.env; set +a; \
+pssh "sudo bash -c 'set -a; . /etc/kinomalysh/db.env; set +a; \
   for f in $APP_DIR/infra/migrations/*.sql; do \
     echo \"  \$(basename \$f)\"; psql \"\$DATABASE_URL\" -q -v ON_ERROR_STOP=1 -f \"\$f\"; done'" \
   || die "миграции не применились"
 ok "схема актуальна"
 
 step "Сервисы"
-ssh "$HOST" 'sudo systemctl restart kinomalysh-api kinomalysh-worker'
+pssh 'sudo systemctl restart kinomalysh-api kinomalysh-worker'
 sleep 3
-ssh "$HOST" 'systemctl is-active kinomalysh-api kinomalysh-worker' \
+pssh 'systemctl is-active kinomalysh-api kinomalysh-worker' \
   || die "сервис не поднялся, смотрите journalctl -u kinomalysh-api -n 50"
 ok "api и worker активны"
 
 step "Ночной бэкап базы"
-scp -q infra/systemd/kinomalysh-backup.service infra/systemd/kinomalysh-backup.timer "$HOST:/tmp/"
-ssh "$HOST" 'sudo install -m644 /tmp/kinomalysh-backup.service /tmp/kinomalysh-backup.timer /etc/systemd/system/ && \
+pscp -q infra/systemd/kinomalysh-backup.service infra/systemd/kinomalysh-backup.timer "$KM_HOST:/tmp/"
+pssh 'sudo install -m644 /tmp/kinomalysh-backup.service /tmp/kinomalysh-backup.timer /etc/systemd/system/ && \
   sudo systemctl daemon-reload && sudo systemctl enable --now kinomalysh-backup.timer'
 ok "таймер включён"
 
