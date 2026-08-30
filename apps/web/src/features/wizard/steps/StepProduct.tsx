@@ -4,6 +4,7 @@ import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { TOKEN_TO_RUB } from '@/shared/config/routes'
 import { formatRub } from '@/shared/lib/format'
+import { cn } from '@/shared/lib/cn'
 import { fetchCatalog, type CatalogProduct } from '@/entities/catalog/model'
 import { useWizard } from '@/features/wizard/model'
 
@@ -82,12 +83,25 @@ export function StepProduct() {
                 onClick={() => chooseProduct(product)}
                 className="group/card overflow-hidden p-0"
               >
-                <div className="relative aspect-video w-full overflow-hidden bg-night-900">
+                <div
+                  className={cn(
+                    'relative w-full overflow-hidden bg-night-900',
+                    product.kind === 'book' ? 'aspect-square' : 'aspect-video',
+                  )}
+                >
                   <div
                     aria-hidden
                     className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(242,179,61,0.22),transparent_65%)]"
                   />
-                  {product.previewUrl && (
+                  {product.kind === 'book' && product.previewUrl && (
+                    <img
+                      src={product.previewUrl}
+                      alt={`Обложка книги «${product.title}»`}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-[1.03]"
+                    />
+                  )}
+                  {product.kind !== 'book' && product.previewUrl && (
                     <video
                       src={product.previewUrl}
                       className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
@@ -99,7 +113,17 @@ export function StepProduct() {
                       onMouseLeave={(event) => event.currentTarget.pause()}
                     />
                   )}
-                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 transition-opacity duration-300 group-hover/card:opacity-0">
+                  {product.kind === 'book' && (
+                    <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-cream/95 px-3 py-1 text-xs font-semibold text-night-950">
+                      Книга · {product.sceneCount} стр
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      'pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 transition-opacity duration-300 group-hover/card:opacity-0',
+                      product.kind === 'book' && product.previewUrl && 'opacity-0',
+                    )}
+                  >
                     <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink-900 bg-cream/95 text-night-950 shadow-[0_3px_0_rgba(0,0,0,0.4)]">
                       {product.previewUrl ? (
                         <Play weight="fill" className="ml-0.5 h-5 w-5" />
