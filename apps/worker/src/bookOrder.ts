@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { createDb, productPages, products, stories, storyPages } from '@kidsstory/db'
 import { buildBookPagePrompt, renderBookPdf, zoneForPage } from '@kidsstory/book'
 import type { BookPage } from '@kidsstory/book'
@@ -64,15 +64,17 @@ async function renderPageImage(
   gender: ChildGender,
   heroRefs: string[],
 ): Promise<string> {
-  const existing = await db.query.storyPages.findFirst({
-    where: eq(storyPages.pageId, page.id),
-  })
+  // Строку заказа обязательно искать по паре storyId и pageId: product_pages.id
+  // общий для всех покупателей этой книги, и фильтр только по pageId задел бы
+  // чужие заказы - вплоть до выдачи чужих иллюстраций.
+  const rowFilter = and(eq(storyPages.storyId, storyId), eq(storyPages.pageId, page.id))
+  const existing = await db.query.storyPages.findFirst({ where: rowFilter })
   if (existing?.status === 'ready' && existing.imageKey) return existing.imageKey
 
   await db
     .update(storyPages)
     .set({ status: 'rendering', attempts: (existing?.attempts ?? 0) + 1, updatedAt: new Date() })
-    .where(eq(storyPages.pageId, page.id))
+    .where(rowFilter)
 
   const prompt = buildBookPagePrompt(pagePrompt(page, gender), zoneForPage(index))
   const url = await withRetries(`страница ${page.position}`, PAGE_ATTEMPTS, () =>
@@ -83,7 +85,7 @@ async function renderPageImage(
   await db
     .update(storyPages)
     .set({ status: 'ready', imageKey: key, failReason: null, updatedAt: new Date() })
-    .where(eq(storyPages.pageId, page.id))
+    .where(rowFilter)
   return key
 }
 
