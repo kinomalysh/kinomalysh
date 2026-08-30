@@ -12,6 +12,7 @@ import {
   buildVideoLd,
 } from '@/shared/lib/seo'
 import { Hero } from '@/widgets/landing/Hero'
+import { Categories } from '@/widgets/landing/Categories'
 import { DemoReel } from '@/widgets/landing/DemoReel'
 import { StickyCta } from '@/widgets/landing/StickyCta'
 import { HowItWorks, Reviews, Showcase, STEPS } from '@/widgets/landing/Sections'
@@ -38,6 +39,7 @@ export function HomePage() {
       />
       <Hero />
       <DemoReel />
+      <Categories />
       <Showcase />
       <HowItWorks />
       <Reviews />

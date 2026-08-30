@@ -4,6 +4,8 @@ import { AppShell } from '@/widgets/app-shell/AppShell'
 import { HomePage } from '@/pages/home/HomePage'
 import { PrivacyPage, TermsPage } from '@/pages/legal/LegalPages'
 import { CreatePage } from '@/pages/create/CreatePage'
+import { CategoryPage } from '@/pages/catalog/CategoryPage'
+import { ProductPage } from '@/pages/catalog/ProductPage'
 import { LibraryPage } from '@/pages/library/LibraryPage'
 import { StoryPage } from '@/pages/story/StoryPage'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
@@ -20,6 +22,10 @@ export function Routes() {
       <Route element={<AppShell />}>
         <Route path={ROUTES.home} element={<HomePage />} />
         <Route path={ROUTES.create} element={<CreatePage />} />
+        <Route path={ROUTES.books} element={<CategoryPage kind="book" />} />
+        <Route path={ROUTES.bookPattern} element={<ProductPage />} />
+        <Route path={ROUTES.cartoons} element={<CategoryPage kind="video" />} />
+        <Route path={ROUTES.cartoonPattern} element={<ProductPage />} />
         <Route path={ROUTES.library} element={<LibraryPage />} />
         <Route path={ROUTES.storyPattern} element={<StoryPage />} />
         <Route path={ROUTES.profile} element={<ProfilePage />} />

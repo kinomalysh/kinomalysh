@@ -19,6 +19,7 @@ const TABS = [
 ]
 
 const LANDING_LINKS = [
+  { href: '#categories', label: 'Что бывает' },
   { href: '#showcase', label: 'Сюжеты' },
   { href: '#how-heading', label: 'Как работает' },
   { href: '#pricing-heading', label: 'Цены' },
@@ -26,7 +27,8 @@ const LANDING_LINKS = [
 ]
 
 const DESK_LINKS = [
-  { to: ROUTES.create, label: 'Мультфильмы' },
+  { to: ROUTES.cartoons, label: 'Мультфильмы' },
+  { to: ROUTES.books, label: 'Книги' },
   { to: ROUTES.library, label: 'Полка' },
 ]
 

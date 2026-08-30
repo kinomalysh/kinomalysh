@@ -1,6 +1,12 @@
 export const ROUTES = {
   home: '/',
   create: '/create',
+  books: '/knigi',
+  bookPattern: '/knigi/:slug',
+  book: (slug: string) => `/knigi/${slug}`,
+  cartoons: '/multfilmy',
+  cartoonPattern: '/multfilmy/:slug',
+  cartoon: (slug: string) => `/multfilmy/${slug}`,
   library: '/library',
   story: (id: string | number) => `/story/${id}`,
   storyPattern: '/story/:id',
