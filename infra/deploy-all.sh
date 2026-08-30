@@ -26,7 +26,7 @@ step "Код и сборка бэкенда"
 pssh "cd $APP_DIR && git fetch --quiet origin && git checkout --quiet $BRANCH && \
   git reset --quiet --hard origin/$BRANCH && \
   npm install --silent && \
-  npm run build -w packages/shared -w packages/db -w packages/storage -w apps/api -w apps/worker" \
+  npm run build -w packages/shared -w packages/db -w packages/storage -w packages/book -w apps/api -w apps/worker" \
   || die "сборка на сервере упала"
 ok "собрано из $BRANCH"
 
