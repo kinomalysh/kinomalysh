@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises'
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { productPages, productScenes, products, settings } from '@kidsstory/db'
-import { deleteObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
+import { deleteObject, getObject, isStorageConfigured, presignGet } from '@kidsstory/storage'
 import { hasNamePlaceholder, NAME_PLACEHOLDER_HINT } from '@kidsstory/shared'
 import { z } from 'zod'
 import { bookPageQueue, db, sceneQueue } from '../context.js'
@@ -525,23 +525,12 @@ async function bookCatalogDto(product: typeof products.$inferSelect) {
     .where(eq(productPages.productId, product.id))
     .orderBy(asc(productPages.position))
   const approved = pages.filter((p) => p.approvedSampleKey)
-  const samplePages = isStorageConfigured
-    ? (
-        await Promise.all(
-          approved.slice(0, 4).map(async (p) => {
-            const url = await presignGet(p.approvedSampleKey as string, { expiresIn: 3600 }).catch(
-              () => null,
-            )
-            return url ? { position: p.position, text: p.text, imageUrl: url } : null
-          }),
-        )
-      ).filter((p): p is { position: number; text: string; imageUrl: string } => p !== null)
-    : []
-  let previewUrl: string | null = null
-  const previewSource = product.previewKey ?? approved[0]?.approvedSampleKey ?? null
-  if (isStorageConfigured && previewSource) {
-    previewUrl = await presignGet(previewSource, { expiresIn: 3600 }).catch(() => null)
-  }
+  const samplePages = approved.slice(0, 4).map((p) => ({
+    position: p.position,
+    text: p.text,
+    imageUrl: catalogMediaUrl(p.approvedSampleKey) as string,
+  }))
+  const previewUrl = catalogMediaUrl(product.previewKey ?? approved[0]?.approvedSampleKey ?? null)
   return {
     id: product.id,
     slug: product.slug,
@@ -574,6 +563,34 @@ async function pageDto(page: typeof productPages.$inferSelect) {
     approvedAt: page.approvedAt?.toISOString() ?? null,
     failReason: page.failReason,
   }
+}
+
+// Витринные картинки отдаём по постоянному адресу, а не подписанной ссылкой:
+// подпись меняется на каждый запрос, поэтому браузер не мог переиспользовать
+// уже скачанную обложку и качал каталог заново при каждом визите.
+export function catalogMediaUrl(key: string | null): string | null {
+  return key ? `/api/media/${key}` : null
+}
+
+export async function publicMediaRoutes(app: FastifyInstance) {
+  app.get('/media/*', async (req, reply) => {
+    const key = (req.params as Record<string, string>)['*'] ?? ''
+    // Только витрина: заказы пользователей остаются за подписанными ссылками.
+    if (!key.startsWith('products/') || key.includes('..')) {
+      return reply.code(404).send({ error: 'Не найдено' })
+    }
+    if (!isStorageConfigured) return reply.code(404).send({ error: 'Хранилище не настроено' })
+    try {
+      const bytes = await getObject(key)
+      const type = key.endsWith('.jpg') ? 'image/jpeg' : key.endsWith('.png') ? 'image/png' : 'application/octet-stream'
+      return reply
+        .header('Content-Type', type)
+        .header('Cache-Control', 'public, max-age=31536000, immutable')
+        .send(Buffer.from(bytes))
+    } catch {
+      return reply.code(404).send({ error: 'Не найдено' })
+    }
+  })
 }
 
 export async function publicCatalogRoutes(app: FastifyInstance) {

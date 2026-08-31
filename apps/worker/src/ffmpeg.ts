@@ -1,4 +1,7 @@
 import { execFile } from 'node:child_process'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { promisify } from 'node:util'
 import { SCENE_CROSSFADE_SECONDS } from '@kidsstory/shared'
 
@@ -165,4 +168,22 @@ export async function concatSegments(
     ...VIDEO_ARGS,
     outPath,
   ])
+}
+
+// Витринные картинки приходят от модели как PNG 1024x1024 весом полтора мегабайта,
+// а показываются в триста пикселей. Десять обложек это тринадцать мегабайт на
+// страницу каталога. ffmpeg на сервере уже есть под видео, поэтому уменьшаем им
+// же и не тащим нативный ресайзер. Кодировщик webp в сборках ffmpeg есть не
+// всегда, mjpeg есть всегда - разница в весе того не стоит.
+export async function toJpeg(input: Uint8Array, width: number, quality = 4): Promise<Uint8Array> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'img-'))
+  const src = path.join(dir, 'src.png')
+  const out = path.join(dir, 'out.jpg')
+  try {
+    await writeFile(src, input)
+    await ffmpeg(['-i', src, '-vf', `scale=${width}:-2:flags=lanczos`, '-q:v', String(quality), out])
+    return new Uint8Array(await readFile(out))
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 }

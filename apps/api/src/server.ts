@@ -14,7 +14,7 @@ import { accountRoutes } from './routes/account.js'
 import { adminRoutes } from './routes/admin.js'
 import { authRoutes } from './routes/auth.js'
 import { paymentRoutes } from './routes/payments.js'
-import { productRoutes, publicCatalogRoutes } from './routes/products.js'
+import { productRoutes, publicCatalogRoutes, publicMediaRoutes } from './routes/products.js'
 import { storyRoutes } from './routes/stories.js'
 
 async function main() {
@@ -66,6 +66,7 @@ async function main() {
   await app.register(adminRoutes)
   await app.register(productRoutes)
   await app.register(publicCatalogRoutes)
+  await app.register(publicMediaRoutes)
 
   await app.listen({ port: env.PORT, host: '0.0.0.0' })
 }

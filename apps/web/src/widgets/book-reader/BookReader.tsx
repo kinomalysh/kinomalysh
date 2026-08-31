@@ -173,6 +173,9 @@ export function BookReader({ title, pages, className }: BookReaderProps) {
                 src={page.imageUrl}
                 alt={page.text ?? `Страница ${i + 1}`}
                 draggable={false}
+                width={900}
+                height={900}
+                decoding="async"
                 loading={i <= 1 ? 'eager' : 'lazy'}
                 className="h-full w-full object-cover"
               />

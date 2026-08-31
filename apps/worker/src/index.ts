@@ -54,6 +54,7 @@ import { runHousekeeping } from './housekeeping.js'
 import { assembleProductOrder, OrderFailedError } from './productOrder.js'
 import { assembleBookOrder } from './bookOrder.js'
 import { seedBookSamples } from './seedBookSamples.js'
+import { optimizeCatalogImages } from './optimizeCatalogImages.js'
 import { buildBookPagePrompt, zoneForPage } from '@kidsstory/book'
 import { generateVoiceover } from './elevenlabs.js'
 
@@ -447,4 +448,6 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   })
 }
 
-seedBookSamples(db).catch((error) => console.error(`[seed] ${String(error)}`))
+seedBookSamples(db)
+  .then(() => optimizeCatalogImages(db))
+  .catch((error) => console.error(`[seed] ${String(error)}`))

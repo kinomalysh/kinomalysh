@@ -28,7 +28,11 @@ export function BookCover({ title, imageUrl, pages, className, size = 'tile' }: 
           src={imageUrl}
           alt=""
           aria-hidden
+          width={640}
+          height={640}
+          decoding="async"
           loading={isHero ? 'eager' : 'lazy'}
+          fetchPriority={isHero ? 'high' : 'low'}
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
