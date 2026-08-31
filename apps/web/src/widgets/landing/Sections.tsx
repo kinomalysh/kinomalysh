@@ -193,8 +193,6 @@ export function HowItWorks() {
 export function Showcase() {
   const [products, setProducts] = useState<CatalogProduct[] | null>(null)
 
-  const ref = useReveal<HTMLElement>([products])
-
   useEffect(() => {
     fetchCatalog()
       .then((all) => setProducts(all.filter((p) => p.kind === 'book').slice(0, 8)))
@@ -202,7 +200,7 @@ export function Showcase() {
   }, [])
 
   return (
-    <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
+    <section id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
       <ChapterTitle chapter="глава 1" title="Десять сказок на выбор" id="showcase-heading" />
       <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-ink-800 lg:text-base">
         Каждая история про одну настоящую детскую трудность: темнота, злость, первое утро в садике,
@@ -220,7 +218,11 @@ export function Showcase() {
       {products && products.length > 0 && (
         <ul className="mt-8 grid grid-cols-2 gap-4 lg:mt-10 lg:grid-cols-4 lg:gap-6">
           {products.map((product, i) => (
-            <li key={product.id} className="reveal" style={{ '--reveal-delay': `${(i % 4) * 70}ms` } as CSSProperties}>
+            <li
+              key={product.id}
+              className="animate-rise"
+              style={{ animationDelay: `${(i % 4) * 70}ms` } as CSSProperties}
+            >
               <Link to={ROUTES.book(product.slug)} className="group/s block focus-visible:outline-none">
                 <div className="transition-transform duration-300 ease-out group-hover/s:-translate-y-1.5">
                   <BookCover title={product.title} imageUrl={product.previewUrl} pages={product.sceneCount} />
