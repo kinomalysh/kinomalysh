@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { Play, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
-import { TOKEN_TO_RUB } from '@/shared/config/routes'
-import { formatRub } from '@/shared/lib/format'
 import { fetchCatalog, type CatalogProduct } from '@/entities/catalog/model'
 import { useWizard } from '@/features/wizard/model'
 import { BookCover } from '@/widgets/product/BookCover'
@@ -151,12 +149,6 @@ function ProductChoice({
           </div>
         )}
       </div>
-      <p className="mt-3 line-clamp-2 text-pretty text-sm leading-snug text-ink-800">
-        {product.tagline}
-      </p>
-      <p className="mt-1.5 font-display text-base text-mustard-deep">
-        {formatRub(product.priceTokens * TOKEN_TO_RUB)}
-      </p>
     </button>
   )
 }

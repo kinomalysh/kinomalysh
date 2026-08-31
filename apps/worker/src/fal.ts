@@ -80,12 +80,13 @@ interface FalEditResponse {
   images?: Array<{ url?: string }>
 }
 
-export type FrameSize = 'portrait_16_9' | 'landscape_16_9' | 'square'
+export type FrameSize = 'portrait_16_9' | 'landscape_16_9' | 'square' | 'portrait_3_4'
 
 const ASPECT_RATIO: Record<FrameSize, string> = {
   portrait_16_9: '9:16',
   landscape_16_9: '16:9',
   square: '1:1',
+  portrait_3_4: '3:4',
 }
 
 export function bytesToDataUri(bytes: Uint8Array, mime = 'image/png'): string {

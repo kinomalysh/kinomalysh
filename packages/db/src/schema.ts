@@ -138,6 +138,8 @@ export const products = pgTable('products', {
   kind: varchar('kind', { length: 8 }).notNull().default('video'),
   about: text('about'),
   audience: varchar('audience', { length: 120 }),
+  coverPrompt: text('cover_prompt'),
+  coverMood: varchar('cover_mood', { length: 120 }),
   priceTokens: integer('price_tokens').notNull().default(0),
   previewKey: text('preview_key'),
   status: varchar('status', { length: 16 }).notNull().default('draft'),

@@ -51,7 +51,7 @@ export function Magic() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-labelledby="magic-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 3" title="Магия в одном фото" id="magic-heading" />
+      <ChapterTitle chapter="глава 2" title="Магия в одном фото" id="magic-heading" />
       <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800 lg:text-base">
         Нейросеть смотрит на фото и рисует мультяшного двойника: причёска, улыбка и любимая
         футболка остаются на месте
@@ -156,7 +156,7 @@ export function HowItWorks() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-labelledby="how-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 4" title="Как рождается сказка" id="how-heading" />
+      <ChapterTitle chapter="глава 3" title="Как рождается сказка" id="how-heading" />
       <ol className="mt-8 space-y-0 lg:mt-12 lg:grid lg:grid-cols-4 lg:gap-8">
         {STEPS.map((step, i) => (
           <li
@@ -191,8 +191,9 @@ export function HowItWorks() {
 }
 
 export function Showcase() {
-  const ref = useReveal<HTMLElement>()
   const [products, setProducts] = useState<CatalogProduct[] | null>(null)
+
+  const ref = useReveal<HTMLElement>([products])
 
   useEffect(() => {
     fetchCatalog()
@@ -202,7 +203,7 @@ export function Showcase() {
 
   return (
     <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 2" title="Десять сказок на выбор" id="showcase-heading" />
+      <ChapterTitle chapter="глава 1" title="Десять сказок на выбор" id="showcase-heading" />
       <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-ink-800 lg:text-base">
         Каждая история про одну настоящую детскую трудность: темнота, злость, первое утро в садике,
         кабинет врача. Не «контент», а то, что помогает прожить вечер

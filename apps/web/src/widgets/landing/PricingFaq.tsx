@@ -29,7 +29,7 @@ export function Pricing() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-labelledby="pricing-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 3" title="Платите в самом конце" id="pricing-heading" />
+      <ChapterTitle chapter="глава 4" title="Платите в самом конце" id="pricing-heading" />
       <ul className="mt-7 space-y-3 lg:mt-10 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
         {GUARANTEES.map((g, i) => (
           <li
@@ -72,7 +72,7 @@ export function Faq() {
     <section aria-labelledby="faq-heading" className="shell py-12 lg:py-16">
       <div className="lg:grid lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-16">
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <ChapterTitle chapter="глава 4" title="Родители спрашивают" id="faq-heading" />
+          <ChapterTitle chapter="глава 5" title="Родители спрашивают" id="faq-heading" />
           <p className="hand-note mt-4 hidden rotate-[-1deg] text-lg lg:block">
             не нашли своё? напишите в телеграм, отвечаем живыми словами
           </p>

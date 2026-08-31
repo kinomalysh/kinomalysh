@@ -40,9 +40,9 @@ export function HomePage() {
       <Hero />
       <DemoReel />
       <Categories />
+      <Reviews />
       <Showcase />
       <HowItWorks />
-      <Reviews />
       <Pricing />
       <Faq />
       <section className="shell mb-10 lg:mb-16">

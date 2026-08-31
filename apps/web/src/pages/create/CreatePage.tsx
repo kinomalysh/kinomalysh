@@ -36,7 +36,14 @@ export function CreatePage() {
 
   return (
     <div className="shell pt-4 lg:pt-10">
-      <div className="mx-auto max-w-5xl lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-12">
+      <div
+        className={cn(
+          'mx-auto',
+          step === 'product'
+            ? 'max-w-6xl'
+            : 'max-w-5xl lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-12',
+        )}
+      >
         <div className="mx-auto w-full max-w-xl lg:mx-0">
           <div className="mb-6 flex items-center gap-3">
             {stepIndex > 0 ? (
@@ -97,7 +104,7 @@ export function CreatePage() {
           </div>
         </div>
 
-        <aside className="sticky top-28 hidden lg:block">
+        <aside className={cn('sticky top-28 hidden', step !== 'product' && 'lg:block')}>
           <div className="sticker rotate-[0.5deg] rounded-3xl p-6">
             <p className="hand-note rotate-[-1deg] text-lg">ваш заказ</p>
 

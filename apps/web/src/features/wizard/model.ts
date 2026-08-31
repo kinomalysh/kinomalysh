@@ -18,7 +18,7 @@ export const STEP_ORDER: WizardStep[] = ['product', 'hero', 'photo', 'casting', 
 export type StepDirection = 'forward' | 'back'
 
 export const STEP_TITLES: Record<WizardStep, string> = {
-  product: 'Выбор мультфильма',
+  product: 'Выбор сказки',
   hero: 'Кто главный герой',
   photo: 'Фотография',
   casting: 'Выбор героя',

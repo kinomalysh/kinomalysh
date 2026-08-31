@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
 
-export function useReveal<T extends HTMLElement = HTMLDivElement>() {
+// deps нужны для блоков, где карточки приходят с сервера: наблюдатель вешался
+// один раз при монтировании, поэтому содержимое, отрисованное позже, навсегда
+// оставалось с opacity 0 - на экране пустое место вместо карточек.
+export function useReveal<T extends HTMLElement = HTMLDivElement>(deps: unknown[] = []) {
   const ref = useRef<T>(null)
 
   useEffect(() => {
@@ -21,7 +24,8 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>() {
     )
     targets.forEach((t) => observer.observe(t))
     return () => observer.disconnect()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
 
   return ref
 }

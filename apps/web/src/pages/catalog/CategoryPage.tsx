@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom'
 import { Play } from '@phosphor-icons/react'
 import { Card } from '@/shared/ui/Card'
 import { BookCover } from '@/widgets/product/BookCover'
-import { formatRub } from '@/shared/lib/format'
-import { ROUTES, TOKEN_TO_RUB } from '@/shared/config/routes'
+import { ROUTES } from '@/shared/config/routes'
 import { useSeo } from '@/shared/lib/seo'
 import { fetchCatalog, type CatalogProduct } from '@/entities/catalog/model'
 
@@ -28,6 +27,7 @@ const COPY: Record<Kind, { seo: 'books' | 'cartoons'; kicker: string; title: str
 
 export function CategoryPage({ kind }: { kind: Kind }) {
   const copy = COPY[kind]
+  const price = kind === 'book' ? '250 ₽' : '1 990 ₽'
   useSeo(copy.seo)
   const [products, setProducts] = useState<CatalogProduct[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +47,17 @@ export function CategoryPage({ kind }: { kind: Kind }) {
         <h1 className="mt-2 font-display text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 lg:text-5xl">
           {copy.title}
         </h1>
-        <p className="mt-4 text-base leading-relaxed text-ink-800">{copy.lead}</p>
+        <p className="mt-4 text-pretty text-base leading-relaxed text-ink-800">{copy.lead}</p>
+
+        <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3">
+          <p className="font-display text-2xl text-mustard-deep">
+            {price}
+            <span className="ml-2 align-middle text-sm font-normal text-ink-800">
+              за любую {kind === 'book' ? 'книгу' : 'историю'}
+            </span>
+          </p>
+          <p className="text-sm text-ink-800">Портрет героя бесплатно, до оплаты</p>
+        </div>
       </header>
 
       {error && <p className="text-sm text-berry">{error}</p>}
@@ -95,14 +105,9 @@ function ProductTile({ product }: { product: CatalogProduct }) {
           )}
         </div>
 
-        <div className="mt-4 flex flex-1 flex-col gap-1.5">
-          {product.tagline && (
-            <p className="text-pretty text-sm leading-relaxed text-ink-800">{product.tagline}</p>
-          )}
-          <p className="mt-auto pt-2 font-display text-lg text-mustard-deep">
-            {formatRub(product.priceTokens * TOKEN_TO_RUB)}
-          </p>
-        </div>
+        {product.tagline && (
+          <p className="mt-3 text-pretty text-sm leading-snug text-ink-800">{product.tagline}</p>
+        )}
       </article>
     </Link>
   )

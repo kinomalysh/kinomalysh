@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { createDb, productPages, products, settings } from '@kidsstory/db'
-import { buildBookPagePrompt, zoneForPage } from '@kidsstory/book'
+import { buildBookCoverPrompt, buildBookPagePrompt, zoneForPage } from '@kidsstory/book'
 import { isStorageConfigured, uploadObject } from '@kidsstory/storage'
 import { buildReelFirstFrame, downloadBytes } from './fal.js'
 
@@ -67,16 +67,23 @@ export async function seedBookSamples(db: Db): Promise<void> {
       }
     }
 
-    // Обложка каталога берётся с первой страницы книги.
-    if (!book.previewKey) {
-      const first = await db.query.productPages.findFirst({
-        where: and(eq(productPages.productId, book.id), eq(productPages.position, 1)),
-      })
-      if (first?.approvedSampleKey) {
+    // Обложка рисуется отдельным кадром по канону плаката, а не берётся с
+    // первой страницы: у страницы верх намеренно пустой под текст.
+    if (!book.previewKey && book.coverPrompt) {
+      try {
+        const prompt = buildBookCoverPrompt(book.coverPrompt, book.coverMood ?? 'warm and hopeful')
+        const url = await buildReelFirstFrame([photo.value], prompt, 'portrait_3_4')
+        const key = `products/${book.id}/cover.png`
+        await uploadObject(key, await downloadBytes(url), 'image/png')
         await db
           .update(products)
-          .set({ previewKey: first.approvedSampleKey, updatedAt: new Date() })
+          .set({ previewKey: key, updatedAt: new Date() })
           .where(eq(products.id, book.id))
+        drawn += 1
+        console.log(`[seed] ${book.slug}: обложка готова`)
+      } catch (error) {
+        failed += 1
+        console.error(`[seed] ${book.slug}: обложка - ${String(error)}`)
       }
     }
   }

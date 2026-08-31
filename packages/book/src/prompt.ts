@@ -19,3 +19,22 @@ export function buildBookPagePrompt(scenePrompt: string, zone: TextZone): string
   const scene = scenePrompt.trim().replace(/\.$/, '')
   return `${scene}, ${BOOK_ILLUSTRATION_STYLE}. ${ZONE_HINT[zone]} ${NO_TEXT_GUARD}`
 }
+
+export const BOOK_COVER_STYLE =
+  'cinematic movie-poster style cover illustration for a childrens picture book, soft stylized 3D cartoon rendering, one single hero character, warm cinematic key light against a deep indigo night palette with golden rim light, rich painterly detail, vertical 3:4 poster composition'
+
+// Канон обложки: один фокус, крупное лицо героя с ясной эмоцией и взглядом в
+// зрителя, читаемое даже в размере ногтя. Верхняя треть намеренно спокойная -
+// туда ляжет название, которое мы рисуем сами шрифтом.
+export function buildBookCoverPrompt(heroPrompt: string, mood: string): string {
+  const hero = heroPrompt.trim().replace(/\.$/, '')
+  return [
+    'Draw ONE single portrait-format cover image, not a storyboard, not panels, not a collage.',
+    `Subject: ${hero}.`,
+    `Emotional tone: ${mood}.`,
+    'Composition: the child fills the lower two thirds of the frame, head and shoulders large and close to camera, face fully visible, eyes looking straight at the viewer, expression clear and readable at thumbnail size.',
+    'Keep the upper third calm and uncluttered - open sky, soft wall or gentle glow - a title will be placed there later.',
+    'Never draw text, letters, words, numbers, captions, logos or signage anywhere in the image.',
+    BOOK_COVER_STYLE,
+  ].join(' ')
+}
