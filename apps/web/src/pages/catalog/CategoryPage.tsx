@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, FilmSlate } from '@phosphor-icons/react'
+import { Play } from '@phosphor-icons/react'
 import { Card } from '@/shared/ui/Card'
-import { cn } from '@/shared/lib/cn'
+import { BookCover } from '@/widgets/product/BookCover'
 import { formatRub } from '@/shared/lib/format'
 import { ROUTES, TOKEN_TO_RUB } from '@/shared/config/routes'
 import { useSeo } from '@/shared/lib/seo'
@@ -16,7 +16,7 @@ const COPY: Record<Kind, { seo: 'books' | 'cartoons'; kicker: string; title: str
       seo: 'books',
       kicker: 'Книги',
       title: 'Сказки, где герой - ваш ребёнок',
-      lead: 'Иллюстрированная книга в PDF. Каждая история про одно настоящее детское чувство: страх темноты, злость, расставание с мамой, первый раз у врача. Читается на телефоне прямо в вашей библиотеке.',
+      lead: 'Каждая книга - восемь разворотов, где ваш ребёнок нарисован главным героем. Каждая история про одно настоящее детское чувство: страх темноты, злость, расставание с мамой, первый раз у врача. Читается на телефоне прямо в вашей библиотеке.',
     },
     video: {
       seo: 'cartoons',
@@ -53,7 +53,7 @@ export function CategoryPage({ kind }: { kind: Kind }) {
       {error && <p className="text-sm text-berry">{error}</p>}
 
       {products === null && !error && (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {[0, 1, 2].map((k) => (
             <li key={k} className="h-64 animate-pulse rounded-3xl bg-paper-shade" />
           ))}
@@ -68,7 +68,7 @@ export function CategoryPage({ kind }: { kind: Kind }) {
       )}
 
       {products && products.length > 0 && (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <li key={product.id}>
               <ProductTile product={product} />
@@ -83,51 +83,68 @@ export function CategoryPage({ kind }: { kind: Kind }) {
 function ProductTile({ product }: { product: CatalogProduct }) {
   const isBook = product.kind === 'book'
   const to = isBook ? ROUTES.book(product.slug) : ROUTES.cartoon(product.slug)
-  const Icon = isBook ? BookOpen : FilmSlate
 
   return (
-    <Link to={to} className="group/tile block h-full">
-      <Card interactive className="flex h-full flex-col overflow-hidden p-0">
-        <div
-          className={cn(
-            'relative w-full overflow-hidden bg-night-900',
-            isBook ? 'aspect-square' : 'aspect-video',
-          )}
-        >
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(242,179,61,0.22),transparent_65%)]"
-          />
-          {product.previewUrl && isBook && (
-            <img
-              src={product.previewUrl}
-              alt={`Обложка книги «${product.title}»`}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/tile:scale-[1.03]"
-            />
-          )}
-          {!product.previewUrl && (
-            <span className="absolute inset-0 grid place-items-center">
-              <Icon className="h-9 w-9 text-moon-300" />
-            </span>
-          )}
-          {isBook && (
-            <span className="absolute left-3 top-3 rounded-full bg-cream/95 px-3 py-1 text-xs font-semibold text-night-950">
-              {product.sceneCount} стр
-            </span>
+    <Link to={to} className="group/tile block h-full focus-visible:outline-none">
+      <article className="flex h-full flex-col">
+        <div className="transition-transform duration-300 ease-out group-hover/tile:-translate-y-1.5 group-focus-visible/tile:-translate-y-1.5">
+          {isBook ? (
+            <BookCover title={product.title} imageUrl={product.previewUrl} pages={product.sceneCount} />
+          ) : (
+            <VideoPoster product={product} />
           )}
         </div>
 
-        <div className="flex flex-1 flex-col gap-1.5 p-5">
-          <h2 className="font-display text-xl text-ink-900">{product.title}</h2>
+        <div className="mt-4 flex flex-1 flex-col gap-1.5">
           {product.tagline && (
-            <p className="text-sm leading-relaxed text-ink-800">{product.tagline}</p>
+            <p className="text-pretty text-sm leading-relaxed text-ink-800">{product.tagline}</p>
           )}
-          <p className="mt-auto pt-3 font-display text-lg text-mustard-deep">
+          <p className="mt-auto pt-2 font-display text-lg text-mustard-deep">
             {formatRub(product.priceTokens * TOKEN_TO_RUB)}
           </p>
         </div>
-      </Card>
+      </article>
     </Link>
+  )
+}
+
+// У ролика не было превью вообще - пустая карточка с кнопкой. Кадр по времени
+// заставляет браузер отрисовать первый кадр вместо чёрного прямоугольника.
+function VideoPoster({ product }: { product: CatalogProduct }) {
+  return (
+    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-night-900 shadow-[0_18px_40px_-18px_rgba(12,10,30,0.75)]">
+      {product.previewUrl ? (
+        <video
+          src={`${product.previewUrl}#t=1`}
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 h-full w-full object-cover"
+          onMouseEnter={(e) => void e.currentTarget.play().catch(() => undefined)}
+          onMouseLeave={(e) => {
+            e.currentTarget.pause()
+            e.currentTarget.currentTime = 1
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,106,84,0.28),transparent_70%)]" />
+      )}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-night-950 via-night-950/80 to-transparent"
+      />
+      <span className="absolute left-3 top-3 rounded-full bg-cream/95 px-2.5 py-0.5 text-[10px] font-semibold text-night-950">
+        Мультфильм
+      </span>
+      <span className="absolute bottom-4 left-4 right-4">
+        <span aria-hidden className="mb-3 block h-0.5 w-9 rounded-full bg-mustard" />
+        <span className="block text-balance font-display text-lg leading-[1.08] text-cream">
+          {product.title}
+        </span>
+      </span>
+      <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-night-950 transition-transform duration-200 group-hover/tile:scale-110">
+        <Play weight="fill" className="ml-0.5 h-4 w-4" />
+      </span>
+    </div>
   )
 }

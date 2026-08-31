@@ -111,7 +111,7 @@ export function CreatePage() {
                 </p>
               </>
             ) : (
-              <p className="mt-2 text-sm text-ink-800">Мультфильм пока не выбран</p>
+              <p className="mt-2 text-sm text-ink-800">Сказка пока не выбрана</p>
             )}
 
             <ul className="mt-5 space-y-3 border-t-2 border-dashed border-ink-900/15 pt-5">

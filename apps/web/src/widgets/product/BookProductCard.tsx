@@ -4,6 +4,7 @@ import { cn } from '@/shared/lib/cn'
 import { plural } from '@/shared/lib/format'
 import type { CatalogProduct } from '@/entities/catalog/model'
 import { BookReader } from '@/widgets/book-reader/BookReader'
+import { BookCover } from './BookCover'
 
 interface BookProductCardProps {
   product: CatalogProduct
@@ -74,25 +75,20 @@ export function BookProductCard({ product, onOrder, className }: BookProductCard
           </div>
         </div>
 
-        {product.previewUrl && (
-          <div className="order-1 lg:order-2">
-            <div className="relative mx-auto max-w-[420px]">
-              <div
-                aria-hidden
-                className="absolute -inset-3 -z-10 rounded-[2rem] bg-mustard/25 blur-2xl"
-              />
-              <img
-                src={product.previewUrl}
-                alt={`Обложка книги «${product.title}»`}
-                width={840}
-                height={840}
-                loading="eager"
-                fetchPriority="high"
-                className="aspect-square w-full rounded-3xl object-cover shadow-[0_24px_60px_-24px_rgba(20,16,40,0.55)]"
-              />
-            </div>
+        <div className="order-1 lg:order-2">
+          <div className="relative mx-auto max-w-[19rem]">
+            <div
+              aria-hidden
+              className="absolute -inset-4 -z-10 rounded-[2.5rem] bg-mustard/25 blur-3xl"
+            />
+            <BookCover
+              title={product.title}
+              imageUrl={product.previewUrl}
+              pages={product.sceneCount}
+              size="hero"
+            />
           </div>
-        )}
+        </div>
       </header>
 
       {product.about && (

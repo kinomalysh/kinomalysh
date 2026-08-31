@@ -1,9 +1,10 @@
-import type { CSSProperties } from 'react'
-import { Play } from '@phosphor-icons/react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { Link } from 'react-router-dom'
 import { ROUTES } from '@/shared/config/routes'
+import { BookCover } from '@/widgets/product/BookCover'
+import { fetchCatalog, type CatalogProduct } from '@/entities/catalog/model'
+import { Button } from '@/shared/ui/Button'
 import { useReveal } from '@/shared/lib/useReveal'
-import { PLOTS } from '@/entities/plot/model'
 import { cn } from '@/shared/lib/cn'
 
 interface ChapterTitleProps {
@@ -50,7 +51,7 @@ export function Magic() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-labelledby="magic-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 1" title="Магия в одном фото" id="magic-heading" />
+      <ChapterTitle chapter="глава 3" title="Магия в одном фото" id="magic-heading" />
       <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-800 lg:text-base">
         Нейросеть смотрит на фото и рисует мультяшного двойника: причёска, улыбка и любимая
         футболка остаются на месте
@@ -155,7 +156,7 @@ export function HowItWorks() {
   const ref = useReveal<HTMLElement>()
   return (
     <section ref={ref} aria-labelledby="how-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 2" title="Как рождается сказка" id="how-heading" />
+      <ChapterTitle chapter="глава 4" title="Как рождается сказка" id="how-heading" />
       <ol className="mt-8 space-y-0 lg:mt-12 lg:grid lg:grid-cols-4 lg:gap-8">
         {STEPS.map((step, i) => (
           <li
@@ -190,56 +191,51 @@ export function HowItWorks() {
 }
 
 export function Showcase() {
-  const featured = PLOTS
-  const navigate = useNavigate()
   const ref = useReveal<HTMLElement>()
+  const [products, setProducts] = useState<CatalogProduct[] | null>(null)
+
+  useEffect(() => {
+    fetchCatalog()
+      .then((all) => setProducts(all.filter((p) => p.kind === 'book').slice(0, 8)))
+      .catch(() => setProducts([]))
+  }, [])
+
   return (
     <section ref={ref} id="showcase" aria-labelledby="showcase-heading" className="shell py-12 lg:py-16">
-      <ChapterTitle chapter="глава 1" title="Какой вечер спасаем?" id="showcase-heading" />
-      <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-800 lg:text-base">
-        Не «контент», а инструменты на вечер: уснуть без слёз, почистить зубы без войны, подружиться со своей злостью
+      <ChapterTitle chapter="глава 2" title="Десять сказок на выбор" id="showcase-heading" />
+      <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-ink-800 lg:text-base">
+        Каждая история про одну настоящую детскую трудность: темнота, злость, первое утро в садике,
+        кабинет врача. Не «контент», а то, что помогает прожить вечер
       </p>
-      <div className="-mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 py-4 scroll-px-5 scrollbar-none lg:mx-0 lg:mt-10 lg:grid lg:grid-cols-3 lg:gap-7 lg:overflow-visible lg:px-0 xl:grid-cols-4">
-        {featured.map((plot, i) => (
-          <button
-            key={plot.id}
-            type="button"
-            onClick={() => navigate(ROUTES.create)}
-            aria-label={`Создать сказку «${plot.title}»`}
-            className={cn(
-              'reveal sticker flex w-60 shrink-0 cursor-pointer snap-start flex-col rounded-3xl p-3 text-left transition-transform duration-200 hover:-translate-y-1 hover:rotate-0 lg:w-auto',
-              i % 2 === 0 ? 'rotate-[-1.3deg]' : 'rotate-[1.3deg]',
-            )}
-            style={{ '--reveal-delay': `${(i % 4) * 80}ms` } as CSSProperties}
-          >
-            <div className="relative flex aspect-[4/3] items-end justify-between overflow-hidden rounded-2xl bg-night-900 p-3">
-              <img
-                src={plot.image}
-                alt={`Кадр из сказки «${plot.title}»`}
-                width={880}
-                height={480}
-                loading={i > 1 ? 'lazy' : 'eager'}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <span className="relative z-10 rounded-full bg-night-950/70 px-2.5 py-1 text-xs font-semibold text-cream">
-                {plot.premium ? '≈3 мин' : '≈2 мин'}
-              </span>
-              <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-cream/95 text-night-950 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
-                <Play weight="fill" className="ml-0.5 h-4 w-4" />
-              </span>
-            </div>
-            <h3 className="mt-3 px-1 font-display text-lg leading-snug text-ink-900 lg:text-xl">
-              {plot.title}
-            </h3>
-            <p className="mt-1 px-1 text-xs leading-relaxed text-ink-800">{plot.tagline}</p>
-            <p className="mt-auto flex items-center justify-between px-1 pb-1 pt-3">
-              <span className="text-xs font-bold uppercase tracking-wide text-ink-500">
-                {plot.ages} лет
-              </span>
-              <span className="text-xs font-semibold text-leaf">{plot.benefit}</span>
-            </p>
-          </button>
-        ))}
+
+      {products === null && (
+        <ul className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((k) => (
+            <li key={k} className="aspect-[3/4] animate-pulse rounded-2xl bg-paper-shade" />
+          ))}
+        </ul>
+      )}
+
+      {products && products.length > 0 && (
+        <ul className="mt-8 grid grid-cols-2 gap-4 lg:mt-10 lg:grid-cols-4 lg:gap-6">
+          {products.map((product, i) => (
+            <li key={product.id} className="reveal" style={{ '--reveal-delay': `${(i % 4) * 70}ms` } as CSSProperties}>
+              <Link to={ROUTES.book(product.slug)} className="group/s block focus-visible:outline-none">
+                <div className="transition-transform duration-300 ease-out group-hover/s:-translate-y-1.5">
+                  <BookCover title={product.title} imageUrl={product.previewUrl} pages={product.sceneCount} />
+                </div>
+                <p className="mt-3 line-clamp-2 text-pretty text-sm leading-snug text-ink-800">
+                  {product.tagline}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-8 flex flex-wrap items-center gap-4">
+        <Link to={ROUTES.books}><Button>Все сказки</Button></Link>
+        <p className="text-sm text-ink-800">250 ₽ за книгу, портрет героя бесплатно</p>
       </div>
     </section>
   )

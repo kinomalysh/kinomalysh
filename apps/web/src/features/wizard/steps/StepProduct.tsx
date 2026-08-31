@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { FilmSlate, Play, WarningCircle } from '@phosphor-icons/react'
+import { Play, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/ui/Button'
 import { Card } from '@/shared/ui/Card'
 import { TOKEN_TO_RUB } from '@/shared/config/routes'
 import { formatRub } from '@/shared/lib/format'
-import { cn } from '@/shared/lib/cn'
 import { fetchCatalog, type CatalogProduct } from '@/entities/catalog/model'
 import { useWizard } from '@/features/wizard/model'
+import { BookCover } from '@/widgets/product/BookCover'
 
 export function StepProduct() {
   const chooseProduct = useWizard((s) => s.chooseProduct)
@@ -30,9 +30,10 @@ export function StepProduct() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="font-display text-2xl text-ink-900">Какой мультфильм снимаем?</h1>
-        <p className="text-sm text-ink-800">
-          История уже написана и озвучена. Ваш ребёнок станет её главным героем
+        <h1 className="font-display text-2xl text-ink-900 lg:text-3xl">Что делаем?</h1>
+        <p className="text-pretty text-sm text-ink-800">
+          История уже написана. Ваш ребёнок станет её главным героем - портрет утвердите бесплатно,
+          до оплаты
         </p>
       </header>
 
@@ -49,19 +50,19 @@ export function StepProduct() {
       )}
 
       {!failed && products === null && (
-        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
-          {[0, 1].map((key) => (
-            <li key={key} className="h-56 animate-pulse rounded-3xl bg-paper-shade" />
+        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((key) => (
+            <li key={key} className="aspect-[3/4] animate-pulse rounded-2xl bg-paper-shade" />
           ))}
         </ul>
       )}
 
       {products !== null && products.length === 0 && (
         <Card className="p-8 text-center">
-          <p className="font-display text-lg text-ink-900">Скоро здесь появятся мультфильмы</p>
+          <p className="font-display text-lg text-ink-900">Скоро здесь появятся сказки</p>
           <p className="mt-2 text-sm text-ink-800">
-            Мы дорисовываем первые истории. Оставьте заявку в Telegram - напишем, как только всё
-            будет готово
+            Мы дорисовываем первые истории. Напишите в Telegram - сообщим, как только всё будет
+            готово
           </p>
           <Button
             variant="secondary"
@@ -75,82 +76,87 @@ export function StepProduct() {
       )}
 
       {products !== null && products.length > 0 && (
-        <ul className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
-          {products.map((product) => (
-            <li key={product.id}>
-              <Card
-                interactive
-                onClick={() => chooseProduct(product)}
-                className="group/card overflow-hidden p-0"
-              >
-                <div
-                  className={cn(
-                    'relative w-full overflow-hidden bg-night-900',
-                    product.kind === 'book' ? 'aspect-square' : 'aspect-video',
-                  )}
-                >
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(242,179,61,0.22),transparent_65%)]"
-                  />
-                  {product.kind === 'book' && product.previewUrl && (
-                    <img
-                      src={product.previewUrl}
-                      alt={`Обложка книги «${product.title}»`}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-[1.03]"
-                    />
-                  )}
-                  {product.kind !== 'book' && product.previewUrl && (
-                    <video
-                      src={product.previewUrl}
-                      className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
-                      muted
-                      loop
-                      playsInline
-                      preload="none"
-                      onMouseEnter={(event) => void event.currentTarget.play().catch(() => undefined)}
-                      onMouseLeave={(event) => event.currentTarget.pause()}
-                    />
-                  )}
-                  {product.kind === 'book' && (
-                    <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-cream/95 px-3 py-1 text-xs font-semibold text-night-950">
-                      Книга · {product.sceneCount} стр
-                    </span>
-                  )}
-                  <span
-                    className={cn(
-                      'pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 transition-opacity duration-300 group-hover/card:opacity-0',
-                      product.kind === 'book' && product.previewUrl && 'opacity-0',
-                    )}
-                  >
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink-900 bg-cream/95 text-night-950 shadow-[0_3px_0_rgba(0,0,0,0.4)]">
-                      {product.previewUrl ? (
-                        <Play weight="fill" className="ml-0.5 h-5 w-5" />
-                      ) : (
-                        <FilmSlate className="h-5 w-5" />
-                      )}
-                    </span>
-                    <span className="hand-note text-base">
-                      {product.previewUrl ? 'наведите - посмотреть' : 'скоро'}
-                    </span>
-                  </span>
-                </div>
-                <div className="space-y-1.5 p-5">
-                  <h2 className="font-display text-xl text-ink-900">{product.title}</h2>
-                  {product.tagline && <p className="text-sm text-ink-800">{product.tagline}</p>}
-                  <p className="flex items-baseline gap-2 pt-1">
-                    <span className="font-display text-lg text-mustard-deep">
-                      {formatRub(product.priceTokens * TOKEN_TO_RUB)}
-                    </span>
-                    <span className="text-xs text-ink-500">{product.sceneCount} сцен</span>
+        <div className="space-y-9">
+          {(['book', 'video'] as const).map((kind) => {
+            const group = products.filter((p) => p.kind === kind)
+            if (group.length === 0) return null
+            return (
+              <section key={kind} className="space-y-4">
+                <div className="flex items-baseline justify-between gap-3 border-b-2 border-dashed border-ink-900/12 pb-2">
+                  <h2 className="font-display text-xl text-ink-900">
+                    {kind === 'book' ? 'Книги-сказки' : 'Мультфильмы'}
+                  </h2>
+                  <p className="shrink-0 text-sm text-ink-800">
+                    {kind === 'book' ? '250 ₽ · 8 страниц' : '1 990 ₽ · 2 минуты'}
                   </p>
                 </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
+                <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                  {group.map((product) => (
+                    <li key={product.id}>
+                      <ProductChoice product={product} onChoose={() => chooseProduct(product)} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
+        </div>
       )}
     </div>
+  )
+}
+
+function ProductChoice({
+  product,
+  onChoose,
+}: {
+  product: CatalogProduct
+  onChoose: () => void
+}) {
+  const isBook = product.kind === 'book'
+  return (
+    <button
+      type="button"
+      onClick={onChoose}
+      aria-label={`Выбрать «${product.title}»`}
+      className="group/pick block w-full text-left focus-visible:outline-none"
+    >
+      <div className="transition-transform duration-300 ease-out group-hover/pick:-translate-y-1.5 group-focus-visible/pick:-translate-y-1.5">
+        {isBook ? (
+          <BookCover title={product.title} imageUrl={product.previewUrl} pages={product.sceneCount} />
+        ) : (
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-night-900 shadow-[0_18px_40px_-18px_rgba(12,10,30,0.75)]">
+            {product.previewUrl && (
+              <video
+                src={`${product.previewUrl}#t=1`}
+                muted
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+            <div
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-night-950 via-night-950/80 to-transparent"
+            />
+            <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-cream/90 text-night-950">
+              <Play weight="fill" className="ml-0.5 h-4 w-4" />
+            </span>
+            <span className="absolute bottom-4 left-4 right-4">
+              <span aria-hidden className="mb-3 block h-0.5 w-9 rounded-full bg-mustard" />
+              <span className="block text-balance font-display text-lg leading-[1.08] text-cream">
+                {product.title}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+      <p className="mt-3 line-clamp-2 text-pretty text-sm leading-snug text-ink-800">
+        {product.tagline}
+      </p>
+      <p className="mt-1.5 font-display text-base text-mustard-deep">
+        {formatRub(product.priceTokens * TOKEN_TO_RUB)}
+      </p>
+    </button>
   )
 }
