@@ -40,6 +40,7 @@ git reset --quiet --hard "$want"
 
 log "доступ по запасному порту"
 bash "$APP_DIR/infra/ensure-ssh-alt-port.sh" || log "запасной порт настроить не удалось, продолжаю"
+bash "$APP_DIR/infra/ensure-ssh-over-tls.sh" || log "SSH поверх TLS настроить не удалось, продолжаю"
 
 log "зависимости"
 npm install --silent --no-audit --no-fund
