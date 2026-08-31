@@ -72,7 +72,9 @@ visudo -cq -f /etc/sudoers.d/90-$DEPLOY_USER
 ok "готов, ключ установлен"
 
 step "SSH"
-cat > /etc/ssh/sshd_config.d/99-hardening.conf <<'EOF'
+# Файл называется 00-, потому что в OpenSSH выигрывает первое вхождение ключа,
+# а образ хостера кладёт 50-cloud-init.conf с PasswordAuthentication yes.
+cat > /etc/ssh/sshd_config.d/00-kinomalysh.conf <<'EOF'
 PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
@@ -88,7 +90,7 @@ EOF
 # закрытые без аутентификации, и рубит их сразу после accept. При закрытых
 # паролях и root это не даёт безопасности, зато ломает наши же выкатки.
 if sshd -T 2>/dev/null | grep -qi '^persourcepenalties'; then
-  echo "PerSourcePenalties no" >> /etc/ssh/sshd_config.d/99-hardening.conf
+  echo "PerSourcePenalties no" >> /etc/ssh/sshd_config.d/00-kinomalysh.conf
 fi
 sshd -t
 systemctl reload ssh 2>/dev/null || systemctl reload sshd

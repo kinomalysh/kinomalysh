@@ -38,9 +38,9 @@ fi
 log "начинаю выкатку $want"
 git reset --quiet --hard "$want"
 
-log "доступ по запасному порту"
+log "доступ по SSH"
+bash "$APP_DIR/infra/ensure-sshd-hardening.sh" || log "ужесточение sshd не применилось, продолжаю"
 bash "$APP_DIR/infra/ensure-ssh-alt-port.sh" || log "запасной порт настроить не удалось, продолжаю"
-bash "$APP_DIR/infra/ensure-ssh-over-tls.sh" || log "SSH поверх TLS настроить не удалось, продолжаю"
 
 log "зависимости"
 npm install --silent --no-audit --no-fund
