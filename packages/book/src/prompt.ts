@@ -24,17 +24,20 @@ export const BOOK_COVER_STYLE =
   'cinematic movie-poster style cover illustration for a childrens picture book, soft stylized 3D cartoon rendering, one single hero character, warm cinematic key light against a deep indigo night palette with golden rim light, rich painterly detail, vertical 3:4 poster composition'
 
 // Канон обложки: один фокус, крупное лицо героя с ясной эмоцией и взглядом в
-// зрителя, читаемое даже в размере ногтя. Верхняя треть намеренно спокойная -
-// туда ляжет название, которое мы рисуем сами шрифтом.
+// зрителя, читаемое даже в размере ногтя. Просить модель «оставить место под
+// заголовок» нельзя - она понимает это буквально и рисует пустую полосу с
+// жёстким швом. Поэтому кадр во весь лист, а читаемость названия обеспечивает
+// затемняющая подложка на нашей стороне.
 export function buildBookCoverPrompt(heroPrompt: string, mood: string): string {
   const hero = heroPrompt.trim().replace(/\.$/, '')
   return [
-    'Draw ONE single portrait-format cover image, not a storyboard, not panels, not a collage.',
+    'Draw ONE single full-bleed cover illustration that fills the entire frame edge to edge.',
     `Subject: ${hero}.`,
     `Emotional tone: ${mood}.`,
-    'Composition: the child fills the lower two thirds of the frame, head and shoulders large and close to camera, face fully visible, eyes looking straight at the viewer, expression clear and readable at thumbnail size.',
-    'Keep the upper third calm and uncluttered - open sky, soft wall or gentle glow - a title will be placed there later.',
-    'Never draw text, letters, words, numbers, captions, logos or signage anywhere in the image.',
+    'Composition: head and shoulders of the child large and close to camera, face fully visible and centred, eyes looking straight at the viewer, expression clear and readable even at thumbnail size.',
+    'The whole frame is continuous painted scenery: the environment behind and above the child extends naturally to the very top edge with soft depth and atmosphere.',
+    'Absolutely no empty bands, no flat strips, no borders, no letterboxing, no frames, no split areas and no seams anywhere in the image.',
+    'Never draw text, letters, words, numbers, captions, logos or signage.',
     BOOK_COVER_STYLE,
   ].join(' ')
 }

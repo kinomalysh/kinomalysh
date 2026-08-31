@@ -72,7 +72,7 @@ export async function seedBookSamples(db: Db): Promise<void> {
     if (!book.previewKey && book.coverPrompt) {
       try {
         const prompt = buildBookCoverPrompt(book.coverPrompt, book.coverMood ?? 'warm and hopeful')
-        const url = await buildReelFirstFrame([photo.value], prompt, 'portrait_3_4')
+        const url = await buildReelFirstFrame([photo.value], prompt, 'square')
         const key = `products/${book.id}/cover.png`
         await uploadObject(key, await downloadBytes(url), 'image/png')
         await db
